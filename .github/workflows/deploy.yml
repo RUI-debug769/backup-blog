@@ -28,6 +28,11 @@ jobs:
       - name: Build Astro site
         run: npm run build
 
+      - name: Add ECS host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H -p 22 ${{ secrets.ECS_HOST }} >> ~/.ssh/known_hosts
+
       - name: Deploy dist/ to ECS via rsync
         uses: burnett01/rsync-deployments@5.2
         with:
