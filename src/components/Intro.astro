@@ -1,0 +1,656 @@
+---
+//
+// 雨夜终端开场动画（intro overlay）
+// 从单文件原型 intro-prototype/index.html 提取，框架无关：
+// - sessionStorage 每会话只播一次；#intro 强制重播
+// - prefers-reduced-motion 时直接不播
+// - 页脚「重播开场」派发 intro:replay 事件触发重播
+//
+// TODO: 终幕标题 QUALIA / 副标题仍是占位，定名后替换下方 title-card 文案
+//
+---
+
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="rain rain--a"></div>
+  <div class="rain rain--b"></div>
+  <div class="vignette"></div>
+
+  <div class="terminal" id="terminal">
+    <div class="terminal__bar">
+      <i></i><i></i><i></i>
+      <span class="terminal__title">qualia — zsh</span>
+    </div>
+    <div class="terminal__body" id="terminalBody"></div>
+  </div>
+
+  <div class="sweep sweep--1"></div>
+  <div class="sweep sweep--2"></div>
+  <div class="sweep sweep--3"></div>
+  <div class="flash"></div>
+
+  <div class="title-card">
+    <h1 class="title-card__main">QUALIA</h1>
+    <p class="title-card__sub">a spark of consciousness, waking in the rain</p>
+    <span class="title-card__hint">— tap to continue —</span>
+  </div>
+
+  <button class="skip" id="skipBtn" type="button">SKIP</button>
+</div>
+
+<style>
+  /* ============ 开场遮罩 ============ */
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: radial-gradient(
+      1400px 800px at 50% -20%,
+      var(--night-1) 0%,
+      var(--night-2) 55%,
+      var(--night-3) 100%
+    );
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity 0.9s ease,
+      visibility 0s 0s;
+  }
+
+  :global(html.intro-seen) .intro,
+  :global(html.intro-reduced) .intro {
+    display: none;
+  }
+
+  .intro.is-done {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.9s ease,
+      visibility 0s 0.9s;
+  }
+
+  /* ---- 雨（两层纯 CSS） ---- */
+  .rain {
+    position: absolute;
+    inset: -60%;
+    pointer-events: none;
+    will-change: background-position;
+  }
+
+  .rain--a {
+    transform: rotate(13deg);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0 26px,
+      rgba(148, 166, 255, 0.28) 26px 29px,
+      transparent 29px 110px
+    );
+    background-size: 130px 130px;
+    animation: rain-fall 0.5s linear infinite;
+  }
+
+  .rain--b {
+    transform: rotate(13deg);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0 40px,
+      rgba(120, 140, 235, 0.16) 40px 44px,
+      transparent 44px 170px
+    );
+    background-size: 200px 200px;
+    animation: rain-fall-b 0.85s linear infinite;
+  }
+
+  @keyframes rain-fall {
+    to {
+      background-position: 0 130px;
+    }
+  }
+
+  @keyframes rain-fall-b {
+    to {
+      background-position: 0 200px;
+    }
+  }
+
+  .vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(6, 7, 14, 0.75) 100%);
+  }
+
+  /* ---- 终端窗口 ---- */
+  .terminal {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: min(86vw, 560px);
+    transform: translate(-50%, -50%) translateY(14px) scale(0.96);
+    opacity: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(16, 18, 34, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      0 40px 90px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .scene-terminal .terminal {
+    animation: term-in 0.7s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+  }
+
+  @keyframes term-in {
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) translateY(0) scale(1);
+    }
+  }
+
+  .terminal__bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .terminal__bar i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: block;
+  }
+
+  .terminal__bar i:nth-child(1) {
+    background: #ff5f57;
+  }
+
+  .terminal__bar i:nth-child(2) {
+    background: #febc2e;
+  }
+
+  .terminal__bar i:nth-child(3) {
+    background: #28c840;
+  }
+
+  .terminal__title {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    color: rgba(190, 200, 240, 0.4);
+  }
+
+  .terminal__body {
+    padding: 20px 20px 22px;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 2;
+    min-height: 132px;
+  }
+
+  .ln {
+    white-space: pre;
+  }
+
+  .ln .prompt {
+    color: var(--accent);
+  }
+
+  .ln .ok {
+    color: var(--ok);
+  }
+
+  .ln .bar-track {
+    display: inline-block;
+    width: 90px;
+    height: 8px;
+    margin: 0 8px;
+    vertical-align: middle;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+
+  .ln .bar-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--cyan));
+  }
+
+  .scene-progress .bar-fill {
+    animation: bar 1s cubic-bezier(0.3, 0.8, 0.3, 1) forwards;
+  }
+
+  @keyframes bar {
+    to {
+      width: 100%;
+    }
+  }
+
+  .caret {
+    color: var(--ink);
+    animation: blink 1s steps(1) infinite;
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .fade-in {
+    animation: fade-in 0.5s ease both;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  /* ---- 故障/色块 ---- */
+  .scene-glitch .terminal {
+    animation: glitch-jitter 0.1s steps(2) 10 both;
+  }
+
+  .scene-glitch .terminal__body {
+    text-shadow:
+      1.6px 0 var(--magenta),
+      -1.6px 0 var(--cyan);
+  }
+
+  @keyframes glitch-jitter {
+    0% {
+      transform: translate(-50%, -50%) translate(0, 0) scale(1);
+    }
+    20% {
+      transform: translate(-50%, -50%) translate(-3px, 1px) scale(1.004);
+    }
+    40% {
+      transform: translate(-50%, -50%) translate(3px, -1px);
+    }
+    60% {
+      transform: translate(-50%, -50%) translate(-2px, 2px);
+    }
+    80% {
+      transform: translate(-50%, -50%) translate(2px, -2px);
+    }
+    100% {
+      transform: translate(-50%, -50%) translate(0, 0) scale(1);
+    }
+  }
+
+  .sweep {
+    position: absolute;
+    left: -30%;
+    width: 160%;
+    height: 3px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .sweep--1 {
+    top: 38%;
+    background: var(--cyan);
+    box-shadow: 0 0 24px var(--cyan);
+  }
+
+  .sweep--2 {
+    top: 55%;
+    background: var(--magenta);
+    box-shadow: 0 0 24px var(--magenta);
+  }
+
+  .sweep--3 {
+    top: 62%;
+    background: var(--amber);
+    box-shadow: 0 0 24px var(--amber);
+  }
+
+  .scene-glitch .sweep--1 {
+    animation: sweep 0.5s 0.05s linear both;
+  }
+
+  .scene-glitch .sweep--2 {
+    animation: sweep 0.42s 0.18s linear both;
+  }
+
+  .scene-glitch .sweep--3 {
+    animation: sweep 0.55s 0.3s linear both;
+  }
+
+  @keyframes sweep {
+    0% {
+      transform: translateX(-60%);
+      opacity: 0;
+    }
+    20% {
+      opacity: 0.7;
+    }
+    80% {
+      opacity: 0.7;
+    }
+    100% {
+      transform: translateX(60%);
+      opacity: 0;
+    }
+  }
+
+  .scene-glitch .rain--a {
+    animation-duration: 0.12s;
+    opacity: 0.8;
+  }
+
+  /* ---- 白光 ---- */
+  .flash {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 8vmax;
+    height: 8vmax;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #dfe4ff 55%, transparent 75%);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .scene-flash .flash {
+    animation: flash 0.85s cubic-bezier(0.65, 0, 0.8, 0.3) forwards;
+  }
+
+  @keyframes flash {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(34);
+      opacity: 0;
+    }
+  }
+
+  /* ---- 终幕标题 ---- */
+  .title-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    opacity: 0;
+    text-align: center;
+  }
+
+  .scene-title .title-card {
+    animation: title-in 1.4s ease 0.25s both;
+  }
+
+  @keyframes title-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .title-card__main {
+    font-family: var(--mono);
+    font-weight: 300;
+    font-size: clamp(40px, 9vw, 76px);
+    letter-spacing: 0.62em;
+    text-indent: 0.62em;
+    color: #f2f4ff;
+    text-shadow: 0 0 40px rgba(139, 155, 255, 0.45);
+    animation: letter-space 1.8s cubic-bezier(0.25, 0.8, 0.3, 1) 0.4s both;
+  }
+
+  @keyframes letter-space {
+    from {
+      letter-spacing: 1em;
+      text-indent: 1em;
+      opacity: 0.2;
+      filter: blur(6px);
+    }
+    to {
+      letter-spacing: 0.62em;
+      text-indent: 0.62em;
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+
+  .title-card__sub {
+    margin-top: 10px;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    text-indent: 0.22em;
+    color: var(--dim);
+  }
+
+  .title-card__hint {
+    position: absolute;
+    bottom: 8vh;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.3em;
+    color: rgba(180, 190, 235, 0.35);
+    animation: hint-breathe 2.4s ease-in-out infinite;
+  }
+
+  @keyframes hint-breathe {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  /* ---- 跳过 ---- */
+  .skip {
+    position: absolute;
+    right: 26px;
+    top: 22px;
+    z-index: 5;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    color: var(--dim);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    padding: 7px 18px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    transition: all 0.25s ease;
+    opacity: 0;
+  }
+
+  .intro:not(.is-done) .skip {
+    animation: skip-in 0.6s ease 1s both;
+  }
+
+  @keyframes skip-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .skip:hover {
+    color: var(--ink);
+    border-color: rgba(255, 255, 255, 0.42);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  @media (max-width: 600px) {
+    .terminal {
+      top: 44%;
+    }
+    .terminal__body {
+      font-size: 12px;
+      padding: 16px 15px 18px;
+      min-height: 120px;
+    }
+    .ln .bar-track {
+      width: 60px;
+    }
+    .title-card__sub {
+      font-size: 11.5px;
+      letter-spacing: 0.14em;
+    }
+    .skip {
+      right: 16px;
+      top: 16px;
+    }
+  }
+</style>
+
+<script>
+  // ====== 开场文案（intro 固定英文，不做翻译） ======
+  const SCRIPT = [
+    { prompt: true, text: 'booting consciousness' },
+    { prompt: true, text: 'loading qualia', progress: true, ok: true },
+    { prompt: true, text: 'who am i?', caret: true, hold: 1500 },
+  ];
+  const TITLE_HOLD = 2600; // 终幕停留时长
+
+  const rootEl = document.documentElement;
+  const intro = document.getElementById('intro')!;
+  const body = document.getElementById('terminalBody')!;
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  let runId = 0;
+
+  function addLine(node: Node) {
+    const div = document.createElement('div');
+    div.className = 'ln';
+    div.appendChild(node);
+    body.appendChild(div);
+    return div;
+  }
+
+  async function typeInto(el: HTMLElement, text: string, speed = 42) {
+    for (const ch of text) {
+      el.textContent += ch;
+      await wait(speed + Math.random() * 35);
+    }
+  }
+
+  async function runLine(line: (typeof SCRIPT)[number], token: number) {
+    const frag = document.createDocumentFragment();
+    if (line.prompt) {
+      const p = document.createElement('span');
+      p.className = 'prompt';
+      p.textContent = '❯ ';
+      frag.appendChild(p);
+    }
+    const cmd = document.createElement('span');
+    frag.appendChild(cmd);
+
+    if (line.progress) {
+      const track = document.createElement('span');
+      track.className = 'bar-track';
+      const fill = document.createElement('span');
+      fill.className = 'bar-fill';
+      track.appendChild(fill);
+      frag.appendChild(track);
+    }
+    const node = addLine(frag);
+
+    await typeInto(cmd, line.text);
+    if (token !== runId) return;
+
+    if (line.progress) {
+      intro.classList.add('scene-progress');
+      await wait(1050);
+      intro.classList.remove('scene-progress');
+      if (line.ok) {
+        const ok = document.createElement('span');
+        ok.className = 'ok fade-in';
+        ok.textContent = ' [ok]';
+        node.appendChild(ok);
+      }
+    }
+    if (line.caret) {
+      const caret = document.createElement('span');
+      caret.className = 'caret';
+      caret.textContent = '_';
+      node.appendChild(caret);
+    }
+    if (line.hold) await wait(line.hold);
+  }
+
+  async function play() {
+    const token = ++runId;
+    body.innerHTML = '';
+    intro.className = 'intro';
+    rootEl.classList.remove('intro-seen', 'intro-finished');
+    rootEl.classList.add('intro-on');
+    intro.setAttribute('aria-hidden', 'false');
+
+    await wait(900);
+    if (token !== runId) return;
+    intro.classList.add('scene-terminal');
+    await wait(1000);
+
+    for (const line of SCRIPT) {
+      await runLine(line, token);
+      if (token !== runId) return;
+      await wait(350);
+    }
+
+    await wait(500);
+    if (token !== runId) return;
+    intro.classList.add('scene-glitch');
+    await wait(1400);
+    if (token !== runId) return;
+    intro.classList.remove('scene-glitch');
+    intro.classList.add('scene-flash');
+    await wait(750);
+    if (token !== runId) return;
+    intro.classList.add('scene-title');
+    await wait(TITLE_HOLD);
+    if (token !== runId) return;
+    finish();
+  }
+
+  function finish() {
+    runId++;
+    intro.classList.add('is-done');
+    rootEl.classList.remove('intro-on');
+    rootEl.classList.add('intro-finished');
+    intro.setAttribute('aria-hidden', 'true');
+    sessionStorage.setItem('introPlayed', '1');
+  }
+
+  document.getElementById('skipBtn')!.addEventListener('click', finish);
+
+  document.addEventListener('intro:replay', () => {
+    sessionStorage.removeItem('introPlayed');
+    play();
+  });
+
+  if (
+    rootEl.classList.contains('intro-on') &&
+    !rootEl.classList.contains('intro-reduced')
+  ) {
+    requestAnimationFrame(play);
+  }
+</script>
