@@ -30,7 +30,9 @@ const year = new Date().getFullYear();
         var seen = sessionStorage.getItem('introPlayed') === '1';
         var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         var force = location.hash === '#intro';
-        document.documentElement.classList.add(seen && !force ? 'intro-seen' : 'intro-on');
+        // 减少动态偏好的用户视为"已看过"：不播开场，工具栏/滚动不受限
+        var play = (!seen || force) && !reduced;
+        document.documentElement.classList.add(play ? 'intro-on' : 'intro-seen');
         if (reduced) document.documentElement.classList.add('intro-reduced');
 
         var theme = localStorage.getItem('theme');

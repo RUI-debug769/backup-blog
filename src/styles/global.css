@@ -50,6 +50,12 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* 开场播放期间锁定滚动（intro-on 由首帧预脚本在确认会播放时才添加） */
+html.intro-on,
+html.intro-on body {
+  overflow: hidden;
+}
+
 body {
   min-height: 100vh;
   background:
@@ -238,6 +244,7 @@ html[data-theme="light"] .icon-moon {
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.35;
+  text-wrap: balance;
 }
 
 .article-header .post-meta {
@@ -271,6 +278,7 @@ html[data-theme="light"] .icon-moon {
   font-size: 22px;
   font-weight: 600;
   letter-spacing: 0.02em;
+  text-wrap: balance;
 }
 
 .prose h3 {
@@ -284,9 +292,18 @@ html[data-theme="light"] .icon-moon {
   color: color-mix(in srgb, var(--text) 88%, transparent);
 }
 
+.prose strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .prose ul,
 .prose ol {
   padding-left: 1.4em;
+}
+
+.prose ::marker {
+  color: var(--accent);
 }
 
 .prose li + li {
@@ -312,20 +329,37 @@ html[data-theme="light"] .prose code {
   color: #4a55c8;
 }
 
+/* 代码块：布局（圆角/边框/内边距）由这里负责，配色交给 Shiki 双主题变量 */
 .prose pre {
   padding: 18px 20px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: var(--night-2);
   overflow-x: auto;
 }
 
 .prose pre code {
   padding: 0;
   background: transparent;
-  color: var(--ink);
   font-size: 13px;
   line-height: 1.7;
+}
+
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+  font-style: var(--shiki-light-font-style);
+  font-weight: var(--shiki-light-font-weight);
+  text-decoration: var(--shiki-light-text-decoration);
+}
+
+html[data-theme="dark"] .astro-code,
+html[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark);
+  background-color: var(--shiki-dark-bg);
+  font-style: var(--shiki-dark-font-style);
+  font-weight: var(--shiki-dark-font-weight);
+  text-decoration: var(--shiki-dark-text-decoration);
 }
 
 .prose img {
@@ -338,6 +372,28 @@ html[data-theme="light"] .prose code {
   border: 0;
   border-top: 1px solid var(--line);
   margin: 2.4em 0;
+}
+
+/* ============ 404 ============ */
+.not-found {
+  text-align: center;
+  padding: 80px 0 40px;
+}
+
+.not-found .code {
+  font-family: var(--mono);
+  font-weight: 300;
+  font-size: clamp(64px, 14vw, 120px);
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: var(--accent);
+  text-shadow: 0 0 40px rgba(139, 155, 255, 0.35);
+}
+
+.not-found p {
+  color: var(--muted);
+  margin: 20px 0 48px;
+  letter-spacing: 0.05em;
 }
 
 /* ============ 页脚 ============ */
