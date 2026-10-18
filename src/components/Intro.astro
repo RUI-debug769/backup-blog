@@ -1,24 +1,40 @@
 ---
 //
-// 雨夜终端开场动画（intro overlay）
+// 雨夜终端开场动画 v4（intro overlay）
 // 从单文件原型 intro-prototype/index.html 提取，框架无关：
+// - 双层霓虹城市（JS 确定性生成）+ CRT 终端 + 技术流 boot log
+// - 撕裂故障 + CRT 关机 → 雨中少女剪影（Seedream 抠图蒙版）
+// - 终幕 MUR DOS LOG
 // - sessionStorage 每会话只播一次；#intro 强制重播
 // - prefers-reduced-motion 时直接不播
 // - 页脚「重播开场」派发 intro:replay 事件触发重播
 //
-// TODO: 终幕标题 QUALIA / 副标题仍是占位，定名后替换下方 title-card 文案
-//
 ---
 
 <div class="intro" id="intro" aria-hidden="true">
+  <!-- 场景层 -->
+  <div class="sky"></div>
+  <div class="city-flash"></div>
+  <svg class="city city--far" id="cityFar" viewBox="0 0 1440 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
   <div class="rain rain--a"></div>
+  <svg class="city city--near" id="cityNear" viewBox="0 0 1440 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
+
+  <!-- 雨中少女剪影（/assets/figure-cut.png 蒙版） -->
+  <div class="figure">
+    <div class="figure-fig"></div>
+  </div>
+
+  <div class="mist"></div>
+  <div class="ground"></div>
   <div class="rain rain--b"></div>
+  <div class="rain rain--c"></div>
+  <div class="lightning"></div>
   <div class="vignette"></div>
 
   <div class="terminal" id="terminal">
     <div class="terminal__bar">
       <i></i><i></i><i></i>
-      <span class="terminal__title">qualia — zsh</span>
+      <span class="terminal__title">amayo — tty1</span>
     </div>
     <div class="terminal__body" id="terminalBody"></div>
   </div>
@@ -29,9 +45,9 @@
   <div class="flash"></div>
 
   <div class="title-card">
-    <h1 class="title-card__main">QUALIA</h1>
-    <p class="title-card__sub">a spark of consciousness, waking in the rain</p>
-    <span class="title-card__hint">— tap to continue —</span>
+    <h1 class="title-card__main">MUR DOS LOG</h1>
+    <p class="title-card__sub">Intellectual growth should commence at birth and cease only at death.</p>
+    <span class="title-card__hint">— enter —</span>
   </div>
 
   <button class="skip" id="skipBtn" type="button">SKIP</button>
@@ -43,12 +59,7 @@
     position: fixed;
     inset: 0;
     z-index: 10;
-    background: radial-gradient(
-      1400px 800px at 50% -20%,
-      var(--night-1) 0%,
-      var(--night-2) 55%,
-      var(--night-3) 100%
-    );
+    background: #080911;
     opacity: 1;
     visibility: visible;
     transition:
@@ -70,225 +81,292 @@
       visibility 0s 0.9s;
   }
 
-  /* ---- 雨（两层纯 CSS） ---- */
+  /* ---- 天空 / 闪电 ---- */
+  .sky {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(900px 340px at 50% 106%, rgba(122, 92, 214, 0.38), transparent 72%),
+      linear-gradient(#0a0b18 0%, #0d0e22 52%, #090a13 100%);
+  }
+  .scene-surge .sky {
+    animation: sky-surge 3.4s ease forwards;
+  }
+  @keyframes sky-surge {
+    0% { filter: brightness(1); }
+    30% { filter: brightness(1.25) saturate(1.25); }
+    100% { filter: brightness(0.82) saturate(1.15); }
+  }
+  .lightning,
+  .city-flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .lightning {
+    background: radial-gradient(1100px 700px at 50% 8%, rgba(200, 214, 255, 0.9), rgba(150, 170, 255, 0.25) 45%, transparent 75%);
+  }
+  .city-flash {
+    background: rgba(170, 190, 255, 1);
+  }
+  .scene-figure .lightning,
+  .scene-figure .city-flash {
+    animation: lightning-flash 5.2s ease-in-out 0.5s both;
+  }
+  @keyframes lightning-flash {
+    0%, 100% { opacity: 0; }
+    11% { opacity: 0.75; }
+    13% { opacity: 0.12; }
+    15% { opacity: 0.5; }
+    19% { opacity: 0; }
+    58% { opacity: 0.42; }
+    60% { opacity: 0; }
+  }
+
+  /* ---- 城市天际线（JS 生成 SVG） ---- */
+  .city {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    pointer-events: none;
+  }
+  .city--far { height: 62%; }
+  .city--near { height: 43%; }
+  .city rect { shape-rendering: crispEdges; }
+
+  /* ---- 湿地面 + 雾气 ---- */
+  .ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 24%;
+    background:
+      radial-gradient(420px 90px at 26% 0%, rgba(92, 225, 255, 0.16), transparent 70%),
+      radial-gradient(480px 100px at 72% 0%, rgba(255, 92, 138, 0.12), transparent 70%),
+      linear-gradient(to top, #05060d 40%, rgba(5, 6, 13, 0));
+  }
+  .mist {
+    position: absolute;
+    left: -25%;
+    bottom: 6%;
+    width: 150%;
+    height: 32%;
+    background: radial-gradient(ellipse at center, rgba(130, 140, 225, 0.13), transparent 70%);
+    filter: blur(14px);
+    animation: mist-drift 26s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes mist-drift {
+    from { transform: translateX(-3%); }
+    to { transform: translateX(3%); }
+  }
+
+  /* ---- 雨中少女剪影（抠图蒙版，深色填充 + 轮廓光） ---- */
+  .figure {
+    position: absolute;
+    left: 50%;
+    bottom: -2%;
+    height: 82vh;
+    aspect-ratio: 1080 / 1356;
+    transform: translateX(-50%) translateY(40px);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .scene-figure .figure {
+    animation: fig-in 1.9s cubic-bezier(0.2, 0.8, 0.25, 1) 0.15s forwards;
+  }
+  @keyframes fig-in {
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  .figure-fig {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(175deg, #161a30 0%, #0b0d1c 55%, #05060e 100%);
+    -webkit-mask-image: url("/assets/figure-cut.png");
+    mask-image: url("/assets/figure-cut.png");
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: bottom center;
+    mask-position: bottom center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    transform-origin: 50% 100%;
+    animation:
+      fig-rim 5.2s ease-in-out 0.5s both,
+      fig-breathe 5.6s ease-in-out infinite;
+  }
+  @keyframes fig-rim {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 2px rgba(92, 225, 255, 0.3)) drop-shadow(0 0 18px rgba(123, 92, 255, 0.18)); }
+    11% { filter: brightness(1.85) drop-shadow(0 0 3px rgba(170, 240, 255, 0.95)) drop-shadow(0 0 30px rgba(120, 160, 255, 0.6)); }
+    15% { filter: brightness(1.1) drop-shadow(0 0 2px rgba(92, 225, 255, 0.35)) drop-shadow(0 0 18px rgba(123, 92, 255, 0.22)); }
+    58% { filter: brightness(1.55) drop-shadow(0 0 3px rgba(170, 240, 255, 0.7)) drop-shadow(0 0 24px rgba(120, 160, 255, 0.4)); }
+  }
+  @keyframes fig-breathe {
+    0%, 100% { transform: scale(1, 1); }
+    50% { transform: scale(1.006, 0.997); }
+  }
+
+  /* ---- 雨（三层，远/中/近） ---- */
   .rain {
     position: absolute;
     inset: -60%;
     pointer-events: none;
     will-change: background-position;
   }
-
   .rain--a {
-    transform: rotate(13deg);
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0 26px,
-      rgba(148, 166, 255, 0.28) 26px 29px,
-      transparent 29px 110px
-    );
-    background-size: 130px 130px;
-    animation: rain-fall 0.5s linear infinite;
+    transform: rotate(12deg);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 34px, rgba(130, 148, 230, 0.14) 34px 37px, transparent 37px 150px);
+    background-size: 180px 180px;
+    animation: rain-a 0.9s linear infinite;
   }
-
   .rain--b {
     transform: rotate(13deg);
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0 40px,
-      rgba(120, 140, 235, 0.16) 40px 44px,
-      transparent 44px 170px
-    );
-    background-size: 200px 200px;
-    animation: rain-fall-b 0.85s linear infinite;
+    background-image: repeating-linear-gradient(to bottom, transparent 0 26px, rgba(148, 166, 255, 0.26) 26px 29px, transparent 29px 110px);
+    background-size: 130px 130px;
+    animation: rain-b 0.5s linear infinite;
   }
-
-  @keyframes rain-fall {
-    to {
-      background-position: 0 130px;
-    }
+  .rain--c {
+    transform: rotate(15deg);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 18px, rgba(180, 198, 255, 0.38) 18px 22px, transparent 22px 78px);
+    background-size: 88px 88px;
+    animation: rain-c 0.36s linear infinite;
   }
-
-  @keyframes rain-fall-b {
-    to {
-      background-position: 0 200px;
-    }
+  @keyframes rain-a { to { background-position: 0 180px; } }
+  @keyframes rain-b { to { background-position: 0 130px; } }
+  @keyframes rain-c { to { background-position: 0 88px; } }
+  .scene-surge .rain--b,
+  .scene-surge .rain--c,
+  .scene-crash .rain--b,
+  .scene-crash .rain--c {
+    animation-duration: 0.22s;
+    opacity: 0.9;
+  }
+  .scene-figure .rain--b,
+  .scene-figure .rain--c {
+    animation-duration: 0.3s;
   }
 
   .vignette {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: radial-gradient(ellipse at center, transparent 45%, rgba(6, 7, 14, 0.75) 100%);
+    z-index: 4;
+    background: radial-gradient(ellipse at center, transparent 42%, rgba(5, 6, 13, 0.8) 100%);
   }
 
-  /* ---- 终端窗口 ---- */
+  /* ---- CRT 终端 ---- */
   .terminal {
     position: absolute;
     left: 50%;
-    top: 46%;
-    width: min(86vw, 560px);
-    transform: translate(-50%, -50%) translateY(14px) scale(0.96);
+    top: 40%;
+    width: min(88vw, 560px);
     opacity: 0;
-    border-radius: 14px;
+    border-radius: 12px;
     overflow: hidden;
-    background: rgba(16, 18, 34, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(10, 12, 26, 0.82);
+    border: 1px solid rgba(120, 150, 255, 0.18);
     box-shadow:
-      0 40px 90px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(0, 0, 0, 0.4),
+      0 30px 80px rgba(0, 0, 0, 0.6),
+      0 0 46px rgba(80, 100, 220, 0.16),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    z-index: 6;
   }
-
-  .scene-terminal .terminal {
-    animation: term-in 0.7s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+  .scene-term .terminal {
+    animation: crt-on 0.55s cubic-bezier(0.2, 0.9, 0.25, 1) forwards;
   }
-
-  @keyframes term-in {
-    to {
-      opacity: 1;
-      transform: translate(-50%, -50%) translateY(0) scale(1);
-    }
+  @keyframes crt-on {
+    0% { opacity: 0; transform: translate(-50%, -50%) scaleY(0.004) scaleX(0.9); filter: brightness(4); }
+    55% { opacity: 1; transform: translate(-50%, -50%) scaleY(0.012) scaleX(1.02); filter: brightness(3); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scaleY(1) scaleX(1); filter: brightness(1); }
+  }
+  .scene-crash .terminal {
+    animation:
+      crash-glitch 0.42s steps(2, end) 0s 5 both,
+      crt-off 0.42s cubic-bezier(0.7, 0, 0.9, 0.3) 0.55s forwards;
+  }
+  @keyframes crash-glitch {
+    0% { transform: translate(-50%, -50%); clip-path: inset(0 0 0 0); }
+    20% { transform: translate(-50%, -50%) translate(-4px, 1px); clip-path: inset(18% 0 54% 0); }
+    40% { transform: translate(-50%, -50%) translate(4px, -2px); clip-path: inset(60% 0 8% 0); }
+    60% { transform: translate(-50%, -50%) translate(-2px, 2px); clip-path: inset(4% 0 72% 0); }
+    80% { transform: translate(-50%, -50%) translate(3px, 0); clip-path: inset(34% 0 40% 0); }
+    100% { transform: translate(-50%, -50%); clip-path: inset(0 0 0 0); }
+  }
+  @keyframes crt-off {
+    0% { opacity: 1; transform: translate(-50%, -50%) scaleY(1) scaleX(1); filter: brightness(1); }
+    40% { opacity: 1; transform: translate(-50%, -50%) scaleY(0.008) scaleX(1.05); filter: brightness(3.4); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scaleY(0.003) scaleX(1.14); filter: brightness(6); }
+  }
+  .scene-crash .terminal__body {
+    text-shadow:
+      1.8px 0 var(--magenta),
+      -1.8px 0 var(--cyan);
   }
 
   .terminal__bar {
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 11px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(255, 255, 255, 0.025);
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(120, 150, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
   }
-
   .terminal__bar i {
     width: 10px;
     height: 10px;
     border-radius: 50%;
     display: block;
   }
-
-  .terminal__bar i:nth-child(1) {
-    background: #ff5f57;
-  }
-
-  .terminal__bar i:nth-child(2) {
-    background: #febc2e;
-  }
-
-  .terminal__bar i:nth-child(3) {
-    background: #28c840;
-  }
-
+  .terminal__bar i:nth-child(1) { background: #ff5f57; }
+  .terminal__bar i:nth-child(2) { background: #febc2e; }
+  .terminal__bar i:nth-child(3) { background: #28c840; }
   .terminal__title {
     margin-left: auto;
     font-family: var(--mono);
     font-size: 10.5px;
     letter-spacing: 0.18em;
-    color: rgba(190, 200, 240, 0.4);
+    color: rgba(150, 170, 230, 0.45);
   }
-
   .terminal__body {
-    padding: 20px 20px 22px;
+    position: relative;
+    padding: 16px 18px 18px;
     font-family: var(--mono);
-    font-size: 13.5px;
-    line-height: 2;
-    min-height: 132px;
-  }
-
-  .ln {
-    white-space: pre;
-  }
-
-  .ln .prompt {
-    color: var(--accent);
-  }
-
-  .ln .ok {
-    color: var(--ok);
-  }
-
-  .ln .bar-track {
-    display: inline-block;
-    width: 90px;
-    height: 8px;
-    margin: 0 8px;
-    vertical-align: middle;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.08);
-    overflow: hidden;
-  }
-
-  .ln .bar-fill {
-    display: block;
-    height: 100%;
-    width: 0;
-    border-radius: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--cyan));
-  }
-
-  .scene-progress .bar-fill {
-    animation: bar 1s cubic-bezier(0.3, 0.8, 0.3, 1) forwards;
-  }
-
-  @keyframes bar {
-    to {
-      width: 100%;
-    }
-  }
-
-  .caret {
+    font-size: 12.8px;
+    line-height: 1.85;
+    min-height: 214px;
     color: var(--ink);
-    animation: blink 1s steps(1) infinite;
+  }
+  .terminal__body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px);
+    animation: scanline-move 7s linear infinite;
+  }
+  .terminal__body::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
+    animation: crt-flicker 4.2s steps(1) infinite;
+  }
+  @keyframes scanline-move { to { background-position: 0 60px; } }
+  @keyframes crt-flicker {
+    0%, 100% { opacity: 0.9; }
+    48% { opacity: 0.82; }
+    50% { opacity: 1; }
+    52% { opacity: 0.86; }
   }
 
-  @keyframes blink {
-    50% {
-      opacity: 0;
-    }
-  }
-
-  .fade-in {
-    animation: fade-in 0.5s ease both;
-  }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  /* ---- 故障/色块 ---- */
-  .scene-glitch .terminal {
-    animation: glitch-jitter 0.1s steps(2) 10 both;
-  }
-
-  .scene-glitch .terminal__body {
-    text-shadow:
-      1.6px 0 var(--magenta),
-      -1.6px 0 var(--cyan);
-  }
-
-  @keyframes glitch-jitter {
-    0% {
-      transform: translate(-50%, -50%) translate(0, 0) scale(1);
-    }
-    20% {
-      transform: translate(-50%, -50%) translate(-3px, 1px) scale(1.004);
-    }
-    40% {
-      transform: translate(-50%, -50%) translate(3px, -1px);
-    }
-    60% {
-      transform: translate(-50%, -50%) translate(-2px, 2px);
-    }
-    80% {
-      transform: translate(-50%, -50%) translate(2px, -2px);
-    }
-    100% {
-      transform: translate(-50%, -50%) translate(0, 0) scale(1);
-    }
-  }
-
+  /* ---- 故障扫线 ---- */
   .sweep {
     position: absolute;
     left: -30%;
@@ -296,58 +374,19 @@
     height: 3px;
     opacity: 0;
     pointer-events: none;
+    z-index: 7;
   }
-
-  .sweep--1 {
-    top: 38%;
-    background: var(--cyan);
-    box-shadow: 0 0 24px var(--cyan);
-  }
-
-  .sweep--2 {
-    top: 55%;
-    background: var(--magenta);
-    box-shadow: 0 0 24px var(--magenta);
-  }
-
-  .sweep--3 {
-    top: 62%;
-    background: var(--amber);
-    box-shadow: 0 0 24px var(--amber);
-  }
-
-  .scene-glitch .sweep--1 {
-    animation: sweep 0.5s 0.05s linear both;
-  }
-
-  .scene-glitch .sweep--2 {
-    animation: sweep 0.42s 0.18s linear both;
-  }
-
-  .scene-glitch .sweep--3 {
-    animation: sweep 0.55s 0.3s linear both;
-  }
-
+  .sweep--1 { top: 36%; background: var(--cyan); box-shadow: 0 0 24px var(--cyan); }
+  .sweep--2 { top: 52%; background: var(--magenta); box-shadow: 0 0 24px var(--magenta); }
+  .sweep--3 { top: 60%; background: var(--amber); box-shadow: 0 0 24px var(--amber); }
+  .scene-crash .sweep--1 { animation: sweep 0.5s 0.05s linear both; }
+  .scene-crash .sweep--2 { animation: sweep 0.42s 0.16s linear both; }
+  .scene-crash .sweep--3 { animation: sweep 0.55s 0.28s linear both; }
   @keyframes sweep {
-    0% {
-      transform: translateX(-60%);
-      opacity: 0;
-    }
-    20% {
-      opacity: 0.7;
-    }
-    80% {
-      opacity: 0.7;
-    }
-    100% {
-      transform: translateX(60%);
-      opacity: 0;
-    }
-  }
-
-  .scene-glitch .rain--a {
-    animation-duration: 0.12s;
-    opacity: 0.8;
+    0% { transform: translateX(-60%); opacity: 0; }
+    20% { opacity: 0.75; }
+    80% { opacity: 0.75; }
+    100% { transform: translateX(60%); opacity: 0; }
   }
 
   /* ---- 白光 ---- */
@@ -362,102 +401,79 @@
     transform: translate(-50%, -50%) scale(0);
     opacity: 0;
     pointer-events: none;
+    z-index: 8;
   }
-
   .scene-flash .flash {
     animation: flash 0.85s cubic-bezier(0.65, 0, 0.8, 0.3) forwards;
   }
-
   @keyframes flash {
-    0% {
-      transform: translate(-50%, -50%) scale(0);
-      opacity: 0;
-    }
-    25% {
-      opacity: 1;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(34);
-      opacity: 0;
-    }
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    25% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(34); opacity: 0; }
   }
 
   /* ---- 终幕标题 ---- */
   .title-card {
     position: absolute;
     inset: 0;
+    z-index: 9;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 14px;
+    padding-top: 15vh;
+    gap: 12px;
     opacity: 0;
     text-align: center;
+    pointer-events: none;
   }
-
+  .title-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(ellipse 60% 45% at 50% 32%, rgba(7, 8, 17, 0.72), transparent 75%);
+  }
   .scene-title .title-card {
-    animation: title-in 1.4s ease 0.25s both;
+    animation: title-in 1.4s ease 0.2s both;
   }
-
   @keyframes title-in {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
   }
-
   .title-card__main {
     font-family: var(--mono);
     font-weight: 300;
-    font-size: clamp(40px, 9vw, 76px);
-    letter-spacing: 0.62em;
-    text-indent: 0.62em;
+    font-size: clamp(30px, 6.4vw, 68px);
+    letter-spacing: 0.26em;
+    text-indent: 0.26em;
     color: #f2f4ff;
-    text-shadow: 0 0 40px rgba(139, 155, 255, 0.45);
-    animation: letter-space 1.8s cubic-bezier(0.25, 0.8, 0.3, 1) 0.4s both;
+    text-shadow:
+      0 0 46px rgba(139, 155, 255, 0.55),
+      0 0 90px rgba(92, 225, 255, 0.25);
+    animation: letter-space 1.8s cubic-bezier(0.25, 0.8, 0.3, 1) 0.35s both;
+    white-space: nowrap;
   }
-
   @keyframes letter-space {
-    from {
-      letter-spacing: 1em;
-      text-indent: 1em;
-      opacity: 0.2;
-      filter: blur(6px);
-    }
-    to {
-      letter-spacing: 0.62em;
-      text-indent: 0.62em;
-      opacity: 1;
-      filter: blur(0);
-    }
+    from { letter-spacing: 0.62em; text-indent: 0.62em; opacity: 0.2; filter: blur(6px); }
+    to { letter-spacing: 0.26em; text-indent: 0.26em; opacity: 1; filter: blur(0); }
   }
-
   .title-card__sub {
-    margin-top: 10px;
+    margin-top: 8px;
     font-size: 13px;
     letter-spacing: 0.22em;
     text-indent: 0.22em;
     color: var(--dim);
   }
-
   .title-card__hint {
-    position: absolute;
-    bottom: 8vh;
+    margin-top: 4vh;
     font-family: var(--mono);
     font-size: 10.5px;
     letter-spacing: 0.3em;
-    color: rgba(180, 190, 235, 0.35);
+    color: rgba(160, 172, 225, 0.4);
     animation: hint-breathe 2.4s ease-in-out infinite;
   }
-
   @keyframes hint-breathe {
-    50% {
-      opacity: 0.35;
-    }
+    50% { opacity: 0.35; }
   }
 
   /* ---- 跳过 ---- */
@@ -465,7 +481,7 @@
     position: absolute;
     right: 26px;
     top: 22px;
-    z-index: 5;
+    z-index: 11;
     background: rgba(255, 255, 255, 0.04);
     cursor: pointer;
     color: var(--dim);
@@ -478,22 +494,13 @@
     transition: all 0.25s ease;
     opacity: 0;
   }
-
   .intro:not(.is-done) .skip {
     animation: skip-in 0.6s ease 1s both;
   }
-
   @keyframes skip-in {
-    from {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
-
   .skip:hover {
     color: var(--ink);
     border-color: rgba(255, 255, 255, 0.42);
@@ -501,36 +508,139 @@
   }
 
   @media (max-width: 600px) {
-    .terminal {
-      top: 44%;
-    }
+    .terminal { top: 40%; width: 92vw; }
     .terminal__body {
-      font-size: 12px;
-      padding: 16px 15px 18px;
-      min-height: 120px;
+      font-size: 11px;
+      padding: 13px 13px 15px;
+      min-height: 188px;
     }
-    .ln .bar-track {
-      width: 60px;
-    }
+    .figure { height: 56vh; }
+    .city--far { height: 50%; }
+    .city--near { height: 36%; }
+    .title-card { padding-top: 12vh; }
     .title-card__sub {
-      font-size: 11.5px;
+      font-size: 11px;
       letter-spacing: 0.14em;
     }
-    .skip {
-      right: 16px;
-      top: 16px;
-    }
+    .skip { right: 16px; top: 16px; }
   }
 </style>
 
 <script>
-  // ====== 开场文案（intro 固定英文，不做翻译） ======
-  const SCRIPT = [
-    { prompt: true, text: 'booting consciousness' },
-    { prompt: true, text: 'loading qualia', progress: true, ok: true },
-    { prompt: true, text: 'who am i?', caret: true, hold: 1500 },
+  // ====== 确定性随机，保证每次生成的城市一致 ======
+  function mulberry32(seed: number) {
+    return function () {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const NS = 'http://www.w3.org/2000/svg';
+  interface CityCfg {
+    seed: number;
+    wMin: number; wMax: number; hMin: number; hMax: number;
+    fill: string; window: string; lit: number; signs: number;
+  }
+  function buildCity(elId: string, cfg: CityCfg) {
+    const el = document.getElementById(elId)!;
+    const rnd = mulberry32(cfg.seed);
+    const rect = (x: number, y: number, w: number, h: number, fill: string) => {
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', String(x));
+      r.setAttribute('y', String(y));
+      r.setAttribute('width', String(w));
+      r.setAttribute('height', String(h));
+      r.setAttribute('fill', fill);
+      el.appendChild(r);
+      return r;
+    };
+    let x = -30;
+    while (x < 1480) {
+      const w = cfg.wMin + rnd() * (cfg.wMax - cfg.wMin);
+      const h = cfg.hMin + rnd() * (cfg.hMax - cfg.hMin);
+      rect(x, 500 - h, w, h, cfg.fill);
+      if (rnd() < 0.22) rect(x + w / 2 - 1, 500 - h - 22 - rnd() * 26, 2, 22, cfg.fill);
+      const cols = Math.max(1, Math.floor((w - 16) / 13));
+      const rows = Math.max(1, Math.floor((h - 20) / 17));
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          if (rnd() > cfg.lit) continue;
+          const neon = rnd();
+          const color =
+            neon < 0.06 ? 'rgba(92,225,255,.85)'
+            : neon < 0.1 ? 'rgba(255,92,138,.8)'
+            : cfg.window;
+          const win = rect(x + 8 + c * 13, 500 - h + 10 + r * 17, 5, 7, color);
+          if (rnd() < 0.12) {
+            win.setAttribute('class', 'win-flicker');
+            win.style.animationDuration = (3 + rnd() * 5).toFixed(2) + 's';
+            win.style.animationDelay = (-rnd() * 6).toFixed(2) + 's';
+          }
+        }
+      }
+      if (rnd() < cfg.signs) {
+        const color = rnd() < 0.5 ? 'rgba(92,225,255,.9)' : 'rgba(255,92,138,.85)';
+        const sign = rect(
+          x + 8 + rnd() * (w - 22),
+          500 - h + 26 + rnd() * 30,
+          Math.min(18, w - 16),
+          4,
+          color,
+        );
+        sign.setAttribute('class', 'win-flicker');
+        sign.style.animationDuration = (2.6 + rnd() * 3).toFixed(2) + 's';
+        sign.style.animationDelay = (-rnd() * 5).toFixed(2) + 's';
+      }
+      x += w + 4 + rnd() * 10;
+    }
+  }
+  buildCity('cityFar', {
+    seed: 20261017, wMin: 64, wMax: 120, hMin: 120, hMax: 280,
+    fill: '#151732', window: 'rgba(150,170,255,.4)', lit: 0.42, signs: 0.18,
+  });
+  buildCity('cityNear', {
+    seed: 778899, wMin: 90, wMax: 160, hMin: 150, hMax: 330,
+    fill: '#080a15', window: 'rgba(160,180,255,.3)', lit: 0.3, signs: 0.3,
+  });
+
+  // JS 动态创建元素的样式（Astro scoped CSS 覆盖不到，走注入 <style>）
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+    .win-flicker { animation-name: win-flicker; animation-timing-function: steps(1); animation-iteration-count: infinite; }
+    @keyframes win-flicker {
+      0%, 90%, 100% { opacity: 1; }
+      91% { opacity: .15; } 93% { opacity: 1; } 96% { opacity: .4; }
+    }
+    .logline, .ln { white-space: pre; opacity: 0; }
+    .logline.show, .ln.show { animation: log-in .18s ease-out both; }
+    @keyframes log-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .logline .t { color: rgba(150, 166, 220, .42); }
+    .logline .ok { color: #6ee7a8; }
+    .logline .warn { color: #ffc46b; }
+    .ln .prompt { color: #8b9bff; }
+    .ln .output { color: #5ce1ff; text-shadow: 0 0 12px rgba(92, 225, 255, .55); }
+    .caret {
+      display: inline-block; width: .62em; background: #dfe4ff;
+      color: transparent; animation: caret-blink 1s steps(1) infinite;
+    }
+    @keyframes caret-blink { 50% { opacity: 0; } }
+  `;
+  document.head.appendChild(styleEl);
+
+  // ====== 启动日志（技术流 boot log，intro 固定英文） ======
+  const BOOT = [
+    { t: '[ 0.000000]', text: 'Linux amayo 6.6.6-rainy x86_64' },
+    { ok: '[  OK  ]', text: 'mounting /dev/phenomenal-experience' },
+    { ok: '[  OK  ]', text: 'starting qualia daemon' },
+    { ok: '[  OK  ]', text: 'calibrating redness of red ... done' },
+    { warn: '[ WARN ]', text: 'self not found in /proc' },
   ];
-  const TITLE_HOLD = 2600; // 终幕停留时长
+  const TITLE_HOLD = 2800; // 终幕停留时长
 
   const rootEl = document.documentElement;
   const intro = document.getElementById('intro')!;
@@ -538,63 +648,22 @@
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
   let runId = 0;
 
-  function addLine(node: Node) {
+  function logLine(parts: { cls?: string; text: string }[]) {
     const div = document.createElement('div');
-    div.className = 'ln';
-    div.appendChild(node);
+    div.className = 'logline';
+    div.innerHTML = parts
+      .map((p) => `<span class="${p.cls || ''}">${p.text}</span>`)
+      .join('');
     body.appendChild(div);
+    requestAnimationFrame(() => div.classList.add('show'));
     return div;
   }
 
-  async function typeInto(el: HTMLElement, text: string, speed = 42) {
+  async function typeInto(el: HTMLElement, text: string, speed = 52) {
     for (const ch of text) {
       el.textContent += ch;
-      await wait(speed + Math.random() * 35);
+      await wait(speed + Math.random() * 30);
     }
-  }
-
-  async function runLine(line: (typeof SCRIPT)[number], token: number) {
-    const frag = document.createDocumentFragment();
-    if (line.prompt) {
-      const p = document.createElement('span');
-      p.className = 'prompt';
-      p.textContent = '❯ ';
-      frag.appendChild(p);
-    }
-    const cmd = document.createElement('span');
-    frag.appendChild(cmd);
-
-    if (line.progress) {
-      const track = document.createElement('span');
-      track.className = 'bar-track';
-      const fill = document.createElement('span');
-      fill.className = 'bar-fill';
-      track.appendChild(fill);
-      frag.appendChild(track);
-    }
-    const node = addLine(frag);
-
-    await typeInto(cmd, line.text);
-    if (token !== runId) return;
-
-    if (line.progress) {
-      intro.classList.add('scene-progress');
-      await wait(1050);
-      intro.classList.remove('scene-progress');
-      if (line.ok) {
-        const ok = document.createElement('span');
-        ok.className = 'ok fade-in';
-        ok.textContent = ' [ok]';
-        node.appendChild(ok);
-      }
-    }
-    if (line.caret) {
-      const caret = document.createElement('span');
-      caret.className = 'caret';
-      caret.textContent = '_';
-      node.appendChild(caret);
-    }
-    if (line.hold) await wait(line.hold);
   }
 
   async function play() {
@@ -605,23 +674,58 @@
     rootEl.classList.add('intro-on');
     intro.setAttribute('aria-hidden', 'false');
 
+    // 幕 0：雨夜城市建立
+    await wait(2300);
+    if (token !== runId) return;
+
+    // 幕 1：CRT 终端开机
+    intro.classList.add('scene-term');
     await wait(900);
     if (token !== runId) return;
-    intro.classList.add('scene-terminal');
-    await wait(1000);
 
-    for (const line of SCRIPT) {
-      await runLine(line, token);
+    for (const line of BOOT) {
+      if (line.t) logLine([{ cls: 't', text: line.t + ' ' }, { text: line.text }]);
+      if (line.ok) logLine([{ cls: 'ok', text: line.ok + ' ' }, { text: line.text }]);
+      if (line.warn) logLine([{ cls: 'warn', text: line.warn + ' ' }, { text: line.text }]);
+      await wait(190 + Math.random() * 120);
       if (token !== runId) return;
-      await wait(350);
     }
+    await wait(260);
+    if (token !== runId) return;
 
+    // $ whoami 逐字输入
+    const cmd = document.createElement('div');
+    cmd.className = 'ln';
+    cmd.innerHTML =
+      '<span class="prompt">$ </span><span class="cmd-text"></span><span class="caret">_</span>';
+    body.appendChild(cmd);
+    requestAnimationFrame(() => cmd.classList.add('show'));
+    await wait(160);
+    await typeInto(cmd.querySelector('.cmd-text') as HTMLElement, 'whoami');
+    if (token !== runId) return;
+    await wait(360);
+
+    const out = document.createElement('div');
+    out.className = 'ln';
+    out.innerHTML = '<span class="output">amayo</span>';
+    body.appendChild(out);
+    requestAnimationFrame(() => out.classList.add('show'));
+    cmd.querySelector('.caret')!.remove();
+    await wait(1200);
+    if (token !== runId) return;
+
+    // 幕 2：雨势变大，终端撕裂 + 关机，少女浮现
+    intro.classList.add('scene-surge');
     await wait(500);
     if (token !== runId) return;
-    intro.classList.add('scene-glitch');
-    await wait(1400);
+    intro.classList.add('scene-crash');
+    await wait(650);
     if (token !== runId) return;
-    intro.classList.remove('scene-glitch');
+    intro.classList.add('scene-figure');
+    await wait(3000);
+    if (token !== runId) return;
+
+    // 幕 3：白光，标题
     intro.classList.add('scene-flash');
     await wait(750);
     if (token !== runId) return;
