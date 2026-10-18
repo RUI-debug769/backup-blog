@@ -7,8 +7,8 @@ interface Props {
   description?: string;
 }
 
-const { title, description = '雨夜终端里的个人博客' } = Astro.props;
-const siteName = 'blog'; // TODO: 站名确定后统一替换
+const { title, description = "Murdo's blog" } = Astro.props;
+const siteName = 'MUR DOS LOG';
 const fullTitle = title ? `${title} · ${siteName}` : siteName;
 const year = new Date().getFullYear();
 ---
@@ -53,8 +53,8 @@ const year = new Date().getFullYear();
 
     <div class="page">
       <header class="site-header">
-        <a href="/"><span class="site-name">blog</span></a>
-        <p class="site-tagline">a spark of consciousness, waking in the rain</p>
+        <a href="/"><span class="site-name">MUR DOS LOG</span></a>
+        <p class="site-tagline">Murdo's blog</p>
       </header>
 
       <main>
