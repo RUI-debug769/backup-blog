@@ -4,7 +4,7 @@
 // 从单文件原型 intro-prototype/index.html 提取，框架无关：
 // - 双层霓虹城市（JS 确定性生成）+ CRT 终端 + 技术流 boot log
 // - 粒子流场 canvas（波带 + 微尘 + 终端爆裂，雨夜紫罗兰配色）
-// - 撕裂故障 + CRT 关机 → 雨中少女剪影（Seedream 抠图蒙版）
+// - 撕裂故障 + CRT 关机 → 雨中少女剪影（墨线双色调烘焙图）
 // - 终幕 MUR DOS LOG
 // - sessionStorage 每会话只播一次；#intro 强制重播
 // - prefers-reduced-motion 时直接不播
@@ -21,9 +21,9 @@
   <svg class="city city--near" id="cityNear" viewBox="0 0 1440 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
   <canvas class="particles" id="particleCanvas" aria-hidden="true"></canvas>
 
-  <!-- 雨中少女剪影（/assets/figure-cut.webp 蒙版） -->
+  <!-- 雨中少女剪影（/assets/figure-cut-ink.webp 墨线双色调，颜色烘焙在图内） -->
   <div class="figure">
-    <div class="figure-fig"></div>
+    <img class="figure-img" src="/assets/figure-cut-ink.webp" alt="" draggable="false" />
   </div>
 
   <div class="mist"></div>
@@ -175,13 +175,13 @@
     to { transform: translateX(3%); }
   }
 
-  /* ---- 雨中少女剪影（抠图蒙版，深色填充 + 轮廓光） ---- */
+  /* ---- 雨中少女剪影（墨线双色调，颜色烘焙在图内） ---- */
   .figure {
     position: absolute;
     left: 50%;
     bottom: -2%;
     height: 82vh;
-    aspect-ratio: 1080 / 1356;
+    aspect-ratio: 810 / 1017;
     transform: translateX(-50%) translateY(40px);
     opacity: 0;
     pointer-events: none;
@@ -192,28 +192,20 @@
   @keyframes fig-in {
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
-  .figure-fig {
-    width: 100%;
+  .figure-img {
+    display: block;
     height: 100%;
-    background: linear-gradient(175deg, #161a30 0%, #0b0d1c 55%, #05060e 100%);
-    -webkit-mask-image: url("/assets/figure-cut.webp");
-    mask-image: url("/assets/figure-cut.webp");
-    -webkit-mask-size: contain;
-    mask-size: contain;
-    -webkit-mask-position: bottom center;
-    mask-position: bottom center;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
+    width: auto;
     transform-origin: 50% 100%;
     animation:
       fig-rim 5.2s ease-in-out 0.5s both,
       fig-breathe 5.6s ease-in-out infinite;
   }
   @keyframes fig-rim {
-    0%, 100% { filter: brightness(1) drop-shadow(0 0 2px rgba(92, 225, 255, 0.3)) drop-shadow(0 0 18px rgba(123, 92, 255, 0.18)); }
-    11% { filter: brightness(1.85) drop-shadow(0 0 3px rgba(170, 240, 255, 0.95)) drop-shadow(0 0 30px rgba(120, 160, 255, 0.6)); }
-    15% { filter: brightness(1.1) drop-shadow(0 0 2px rgba(92, 225, 255, 0.35)) drop-shadow(0 0 18px rgba(123, 92, 255, 0.22)); }
-    58% { filter: brightness(1.55) drop-shadow(0 0 3px rgba(170, 240, 255, 0.7)) drop-shadow(0 0 24px rgba(120, 160, 255, 0.4)); }
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 3px rgba(139, 155, 255, 0.45)) drop-shadow(0 0 22px rgba(123, 92, 255, 0.25)); }
+    11% { filter: brightness(1.5) drop-shadow(0 0 4px rgba(200, 230, 255, 0.95)) drop-shadow(0 0 34px rgba(120, 160, 255, 0.65)); }
+    15% { filter: brightness(1.08) drop-shadow(0 0 3px rgba(139, 155, 255, 0.5)) drop-shadow(0 0 22px rgba(123, 92, 255, 0.3)); }
+    58% { filter: brightness(1.35) drop-shadow(0 0 4px rgba(200, 230, 255, 0.75)) drop-shadow(0 0 28px rgba(120, 160, 255, 0.45)); }
   }
   @keyframes fig-breathe {
     0%, 100% { transform: scale(1, 1); }
