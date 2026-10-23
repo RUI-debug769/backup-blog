@@ -1,6 +1,7 @@
 ---
 title: "让 .claude 在 DeepSeek Harness 里跑起来：dsh-dotclaude"
 pubDate: 2026-10-19
+category: demo
 tags: ["DSH", "插件", "Claude Code", "工程"]
 description: "内置的 dsh-tui 0.14.0 其实早就被宿主跳过了。查清这件事之后，我把 Claude Code 项目里真正还空着的那一半——.claude 的命令与权限——做成了一个 DSH 插件。"
 ---

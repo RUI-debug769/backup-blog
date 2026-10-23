@@ -6,27 +6,55 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
 
+const CATEGORY_LABEL: Record<string, string> = {
+  portfolio: '作品集',
+  demo: '随便做的 demo',
+  essay: '随笔',
+};
+const groups = ['portfolio', 'demo', 'essay']
+  .map((c) => ({ label: CATEGORY_LABEL[c], items: posts.filter((p) => p.data.category === c) }))
+  .filter((g) => g.items.length > 0);
+
 const fmtDate = (d: Date) =>
   d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 ---
 
 <BaseLayout>
-  <ul class="post-list">
-    {
-      posts.map((post) => (
-        <li class="post-item">
-          <a href={`/blog/${post.id}/`}>
-            <h2 class="post-title">{post.data.title}</h2>
-            <div class="post-meta">
-              <time datetime={post.data.pubDate.toISOString()}>{fmtDate(post.data.pubDate)}</time>
-              {post.data.tags.map((tag) => (
-                <span class="tag">{tag}</span>
-              ))}
-            </div>
-            {post.data.description && <p class="post-desc">{post.data.description}</p>}
-          </a>
-        </li>
-      ))
-    }
-  </ul>
+  {
+    groups.map((group) => (
+      <section class="post-group">
+        <h2 class="group-title">{group.label}</h2>
+        <ul class="post-list">
+          {group.items.map((post) => (
+            <li class="post-item">
+              <a href={`/blog/${post.id}/`}>
+                <h3 class="post-title">{post.data.title}</h3>
+                <div class="post-meta">
+                  <time datetime={post.data.pubDate.toISOString()}>{fmtDate(post.data.pubDate)}</time>
+                  {post.data.tags.map((tag) => (
+                    <span class="tag">{tag}</span>
+                  ))}
+                </div>
+                {post.data.description && <p class="post-desc">{post.data.description}</p>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
 </BaseLayout>
+
+<style>
+  .post-group + .post-group {
+    margin-top: 2.6rem;
+  }
+  .group-title {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.3em;
+    color: var(--dim);
+    margin-bottom: 1rem;
+  }
+</style>
