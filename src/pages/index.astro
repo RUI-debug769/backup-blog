@@ -11,6 +11,12 @@ const CATEGORY_LABEL: Record<string, string> = {
   demo: '随便做的 demo',
   essay: '随笔',
 };
+/* 每组的看板角色：作品集=炼金术士（把思想铸成工具） demo=小魔女 随笔=窗边读书 */
+const GROUP_CHARA: Record<string, string> = {
+  portfolio: '/assets/chara/chara-alchemist.webp',
+  demo: '/assets/chara/chara-witch.webp',
+  essay: '/assets/chara/chara-reader.webp',
+};
 const groups = ['portfolio', 'demo', 'essay']
   .map((c) => ({ key: c, label: CATEGORY_LABEL[c], items: posts.filter((p) => p.data.category === c) }))
   .filter((g) => g.items.length > 0);
@@ -23,7 +29,10 @@ const fmtDate = (d: Date) =>
   {
     groups.map((group) => (
       <section class:list={['post-group', { 'post-group--cards': group.key === 'portfolio' }]}>
-        <h2 class="group-title">{group.label}</h2>
+        <div class="group-head">
+          <img class="group-chara sketch" src={GROUP_CHARA[group.key]} alt="" loading="lazy" draggable="false" />
+          <h2 class="group-title">{group.label}</h2>
+        </div>
         <ul class="post-list">
           {group.items.map((post) => (
             <li class="post-item">
@@ -50,19 +59,24 @@ const fmtDate = (d: Date) =>
     margin-top: 2.6rem;
   }
 
-  /* 分组标题：像素体 + 两侧小星 */
+  /* 分组标题：像素体 + 看板角色 + 尾星 */
+  .group-head {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 1rem;
+  }
+  .group-chara {
+    height: 52px;
+    margin-bottom: -6px;
+  }
   .group-title {
     font-family: var(--pixel);
     font-size: 0.85rem;
     font-weight: 400;
     letter-spacing: 0.3em;
     color: var(--dim);
-    margin-bottom: 1rem;
-  }
-  .group-title::before {
-    content: "✦";
-    margin-right: 0.7em;
-    opacity: 0.5;
+    margin-bottom: 0;
   }
   .group-title::after {
     content: "✦";

@@ -174,8 +174,32 @@ html[data-theme="light"] .icon-moon {
   padding: 96px 24px 80px;
 }
 
+/* 素描立绘通用：暗色下反白成白描 + 紫罗兰微光，浅色下就是纸上铅笔 */
+.sketch {
+  transition: filter 0.35s ease, opacity 0.35s ease;
+}
+
+html[data-theme="dark"] .sketch {
+  filter: invert(0.88) brightness(1.04) drop-shadow(0 0 10px rgba(139, 155, 255, 0.28));
+}
+
+html[data-theme="light"] .sketch {
+  filter: none;
+  opacity: 0.85;
+}
+
 .site-header {
+  position: relative;
   margin-bottom: 64px;
+}
+
+/* 首页叙述者：AI 少女站在站名右侧 */
+.header-chara {
+  position: absolute;
+  right: 0;
+  bottom: -10px;
+  height: 150px;
+  pointer-events: none;
 }
 
 .site-header a {
@@ -440,6 +464,12 @@ html[data-theme="dark"] .astro-code span {
   padding: 80px 0 40px;
 }
 
+/* 404 的迷路小魔女 */
+.witch-404 {
+  height: 180px;
+  margin-bottom: 12px;
+}
+
 .not-found .code {
   font-family: var(--mono);
   font-weight: 300;
@@ -532,5 +562,8 @@ html.intro-on .ambient {
   }
   .footer-figure {
     height: 84px;
+  }
+  .header-chara {
+    height: 96px;
   }
 }
