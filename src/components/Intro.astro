@@ -3,6 +3,7 @@
 // 雨夜终端开场动画 v4（intro overlay）
 // 从单文件原型 intro-prototype/index.html 提取，框架无关：
 // - 双层霓虹城市（JS 确定性生成）+ CRT 终端 + 技术流 boot log
+// - 粒子流场 canvas（波带 + 微尘 + 终端爆裂，雨夜紫罗兰配色）
 // - 撕裂故障 + CRT 关机 → 雨中少女剪影（Seedream 抠图蒙版）
 // - 终幕 MUR DOS LOG
 // - sessionStorage 每会话只播一次；#intro 强制重播
@@ -18,6 +19,7 @@
   <svg class="city city--far" id="cityFar" viewBox="0 0 1440 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
   <div class="rain rain--a"></div>
   <svg class="city city--near" id="cityNear" viewBox="0 0 1440 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
+  <canvas class="particles" id="particleCanvas" aria-hidden="true"></canvas>
 
   <!-- 雨中少女剪影（/assets/figure-cut.webp 蒙版） -->
   <div class="figure">
@@ -135,6 +137,15 @@
   .city--far { height: 62%; }
   .city--near { height: 43%; }
   .city rect { shape-rendering: crispEdges; }
+
+  /* ---- 粒子流场（canvas，z 序：近景城市之上、人物之下） ---- */
+  .particles {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
 
   /* ---- 湿地面 + 雾气 ---- */
   .ground {
@@ -648,6 +659,248 @@
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
   let runId = 0;
 
+  // ====== 粒子流场（波带 + 环境微尘 + 终端爆裂，雨夜主题配色） ======
+  // 配色与强度经原型调优：紫罗兰/雾蓝主导，连线与鼠标漩涡保持克制
+  interface PfParticle {
+    kind: 'band' | 'dust';
+    x: number; baseY: number; amp: number; wspeed: number; phase: number;
+    z: number; ci: number; a: number; yOff: number;
+    ix: number; iy: number;
+    _i: number; _x: number; _y: number; _a: number;
+  }
+  interface PfBurst {
+    x: number; y: number; vx: number; vy: number;
+    life: number; decay: number; ci: number; size: number;
+  }
+  const PF = {
+    canvas: document.getElementById('particleCanvas') as HTMLCanvasElement,
+    ctx: null as CanvasRenderingContext2D | null,
+    w: 0, h: 0, dpr: 1,
+    parts: [] as PfParticle[],
+    bursts: [] as PfBurst[],
+    sprites: [] as HTMLCanvasElement[],
+    t: 0, last: 0, intensity: 0.15, target: 0.15, rise: 0,
+    mouse: { x: -9999, y: -9999 }, smx: -9999, smy: -9999,
+    pulseX: -999, paused: false,
+    frameAvg: 16, degraded: false,
+  };
+  const PF_COLORS = [[154, 134, 230], [139, 155, 255], [92, 225, 255], [255, 92, 138]];
+  const PF_WEIGHTS = [0.42, 0.33, 0.2, 0.05]; // 紫罗兰 + 雾蓝主导，冰蓝点缀，极稀有霓虹粉
+  function pfPickColor() {
+    const r = Math.random();
+    let acc = 0;
+    for (let i = 0; i < PF_WEIGHTS.length; i++) { acc += PF_WEIGHTS[i]; if (r < acc) return i; }
+    return 0;
+  }
+
+  function pfSprite(rgb: number[]) {
+    const s = document.createElement('canvas');
+    s.width = s.height = 32;
+    const c = s.getContext('2d')!;
+    const g = c.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.9)`);
+    g.addColorStop(0.35, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.35)`);
+    g.addColorStop(1, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+    c.fillStyle = g;
+    c.fillRect(0, 0, 32, 32);
+    return s;
+  }
+
+  function pfResize() {
+    PF.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    PF.w = PF.canvas.clientWidth; PF.h = PF.canvas.clientHeight;
+    PF.canvas.width = PF.w * PF.dpr;
+    PF.canvas.height = PF.h * PF.dpr;
+    PF.ctx!.setTransform(PF.dpr, 0, 0, PF.dpr, 0, 0);
+  }
+
+  function pfSpawn() {
+    PF.parts.length = 0;
+    const mobile = PF.w < 640;
+    const bandDef = [
+      { y: 0.60, amp: 26, speed: 0.50, n: mobile ? 170 : 460 },
+      { y: 0.68, amp: 34, speed: 0.34, n: mobile ? 140 : 370 },
+      { y: 0.76, amp: 42, speed: 0.22, n: mobile ? 105 : 280 },
+    ];
+    for (const b of bandDef) {
+      for (let i = 0; i < b.n; i++) {
+        PF.parts.push({
+          kind: 'band',
+          x: Math.random() * (PF.w + 200) - 100,
+          baseY: b.y * PF.h + (Math.random() - 0.5) * 26,
+          amp: b.amp * (0.7 + Math.random() * 0.6),
+          wspeed: b.speed * (0.8 + Math.random() * 0.4),
+          phase: Math.random() * Math.PI * 2,
+          z: 0.35 + Math.random() * 0.65,
+          ci: pfPickColor(),
+          a: 0.18 + Math.random() * 0.42,
+          yOff: 0,
+          ix: 0, iy: 0, _i: 0, _x: 0, _y: 0, _a: 0,
+        });
+      }
+    }
+    const dust = mobile ? 80 : 220;
+    for (let i = 0; i < dust; i++) {
+      PF.parts.push({
+        kind: 'dust',
+        x: Math.random() * PF.w,
+        baseY: Math.random() * PF.h,
+        amp: 8 + Math.random() * 18,
+        wspeed: 0.1 + Math.random() * 0.25,
+        phase: Math.random() * Math.PI * 2,
+        z: 0.25 + Math.random() * 0.75,
+        ci: pfPickColor(),
+        a: 0.08 + Math.random() * 0.22,
+        yOff: 0,
+        ix: 0, iy: 0, _i: 0, _x: 0, _y: 0, _a: 0,
+      });
+    }
+  }
+
+  function pfBurst(cx: number, cy: number, n = 260) {
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const sp = 1.2 + Math.random() * 4.5;
+      PF.bursts.push({
+        x: cx + (Math.random() - 0.5) * 220,
+        y: cy + (Math.random() - 0.5) * 90,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp - 1.2,
+        life: 1, decay: 0.006 + Math.random() * 0.012,
+        ci: pfPickColor(),
+        size: 2 + Math.random() * 5,
+      });
+    }
+  }
+
+  function pfDrawLinks(ctx: CanvasRenderingContext2D, w: number, h: number) {
+    const CELL = 95, LINK = 72, LINK2 = LINK * LINK;
+    const cols = Math.ceil((w + CELL) / CELL), rows = Math.ceil((h + CELL) / CELL);
+    const grid: (PfParticle[] | undefined)[] = new Array(cols * rows);
+    for (const p of PF.parts) {
+      if (p._a < 0.03) continue;
+      const cx = Math.max(0, Math.min(cols - 1, (p._x / CELL) | 0));
+      const cy = Math.max(0, Math.min(rows - 1, (p._y / CELL) | 0));
+      (grid[cy * cols + cx] || (grid[cy * cols + cx] = []))!.push(p);
+    }
+    ctx.lineWidth = 0.6;
+    ctx.strokeStyle = 'rgb(140, 150, 235)';
+    for (let cy = 0; cy < rows; cy++) {
+      for (let cx = 0; cx < cols; cx++) {
+        const cell = grid[cy * cols + cx];
+        if (!cell) continue;
+        const near = [
+          grid[cy * cols + cx + 1],
+          grid[(cy + 1) * cols + cx - 1],
+          grid[(cy + 1) * cols + cx],
+          grid[(cy + 1) * cols + cx + 1],
+        ];
+        for (const p of cell) {
+          for (const arr of [cell, ...near]) {
+            if (!arr) continue;
+            for (const q of arr) {
+              if (q._i <= p._i) continue;
+              const dx = p._x - q._x, dy = p._y - q._y, d2 = dx * dx + dy * dy;
+              if (d2 > LINK2) continue;
+              const d = Math.sqrt(d2);
+              const a = (1 - d / LINK) * 0.18 * PF.intensity * Math.min(p._a + q._a, 1);
+              if (a < 0.015) continue;
+              ctx.globalAlpha = Math.min(a, 0.5);
+              ctx.beginPath();
+              ctx.moveTo(p._x, p._y);
+              ctx.lineTo(q._x, q._y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function pfTick(now: number) {
+    if (document.hidden || PF.paused) { PF.last = now; requestAnimationFrame(pfTick); return; }
+    const dt = Math.min((now - PF.last) / 16.67, 3) || 1;
+    PF.frameAvg = PF.frameAvg * 0.95 + (now - PF.last) * 0.05;
+    if (!PF.degraded && PF.frameAvg > 26 && PF.parts.length > 400) {
+      PF.degraded = true;
+      PF.parts.length = Math.floor(PF.parts.length / 2);
+    }
+    PF.last = now;
+    PF.t += dt * 0.016;
+    PF.intensity += (PF.target - PF.intensity) * 0.03 * dt;
+
+    const ctx = PF.ctx!, w = PF.w, h = PF.h;
+    // 拖尾：destination-out 渐隐上一帧，保持画布透明
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'lighter';
+
+    // 鼠标位置平滑跟随
+    PF.smx += (PF.mouse.x - PF.smx) * 0.12 * dt;
+    PF.smy += (PF.mouse.y - PF.smy) * 0.12 * dt;
+    // 能量脉冲沿波带周期扫过
+    PF.pulseX = ((PF.t * 140) % (w + 480)) - 240;
+
+    const VR = 150, VR2 = VR * VR;
+    let idx = 0;
+    for (const p of PF.parts) {
+      p.x -= (p.kind === 'band' ? p.wspeed * 1.6 : 0.22 * p.z) * dt;
+      if (p.x < -120) p.x = w + 110;
+      if (PF.rise) p.yOff -= 0.5 * p.z * dt;
+      let y = p.baseY + Math.sin(p.x * 0.006 + PF.t * p.wspeed * 6 + p.phase) * p.amp * p.z
+            + Math.sin(PF.t * 0.8 + p.phase * 2.3) * 3 + p.yOff;
+
+      // 鼠标引力漩涡：切向绕转 + 弱内吸（带速度累积与阻尼）
+      const dx = p.x - PF.smx, dy = y - PF.smy, d2 = dx * dx + dy * dy;
+      if (d2 < VR2) {
+        const d = Math.sqrt(d2) || 1;
+        const f = (1 - d / VR) * 0.9 * dt;
+        p.ix += ((-dy / d) * 2.6 + (-dx / d) * 0.5) * f;
+        p.iy += ((dx / d) * 2.6 + (-dy / d) * 0.5) * f;
+      }
+      p.ix *= 1 - 0.06 * dt;
+      p.iy *= 1 - 0.06 * dt;
+      const x = p.x + p.ix;
+      y += p.iy;
+
+      const pulse = Math.max(0, 1 - Math.abs(x - PF.pulseX) / 110);
+      const tw = 0.75 + 0.25 * Math.sin(PF.t * 2.2 + p.phase * 5);
+      const alpha = Math.min(p.a * tw * PF.intensity * (1 + pulse * 0.55), 1);
+      p._i = idx++; p._x = x; p._y = y; p._a = alpha;
+      ctx.globalAlpha = alpha;
+      const s = (p.kind === 'band' ? 5.5 : 4) * p.z;
+      ctx.drawImage(PF.sprites[p.ci], x - s, y - s, s * 2, s * 2);
+    }
+
+    // 星座连线（空间网格）
+    pfDrawLinks(ctx, w, h);
+
+    for (let i = PF.bursts.length - 1; i >= 0; i--) {
+      const b = PF.bursts[i];
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      b.vx *= 0.985; b.vy = b.vy * 0.985 + 0.02 * dt;
+      b.life -= b.decay * dt;
+      if (b.life <= 0) { PF.bursts.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.min(b.life, 0.9) * PF.intensity * 1.4;
+      const s = b.size;
+      ctx.drawImage(PF.sprites[b.ci], b.x - s, b.y - s, s * 2, s * 2);
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(pfTick);
+  }
+
+  if (!rootEl.classList.contains('intro-reduced')) {
+    PF.ctx = PF.canvas.getContext('2d');
+    PF.sprites = PF_COLORS.map(pfSprite);
+    pfResize();
+    pfSpawn();
+    window.addEventListener('resize', () => { pfResize(); pfSpawn(); });
+    window.addEventListener('pointermove', (e) => { PF.mouse.x = e.clientX; PF.mouse.y = e.clientY; });
+    window.addEventListener('pointerleave', () => { PF.mouse.x = -9999; PF.mouse.y = -9999; });
+    requestAnimationFrame((t) => { PF.last = t; pfTick(t); });
+  }
+
   function logLine(parts: { cls?: string; text: string }[]) {
     const div = document.createElement('div');
     div.className = 'logline';
@@ -673,6 +926,14 @@
     rootEl.classList.remove('intro-seen', 'intro-finished');
     rootEl.classList.add('intro-on');
     intro.setAttribute('aria-hidden', 'false');
+    PF.target = 0.15; PF.rise = 0; PF.bursts.length = 0;
+    PF.paused = false;
+    if (PF.ctx) {
+      PF.ctx.save();
+      PF.ctx.globalCompositeOperation = 'source-over';
+      PF.ctx.clearRect(0, 0, PF.w, PF.h);
+      PF.ctx.restore();
+    }
 
     // 幕 0：雨夜城市建立
     await wait(2300);
@@ -719,9 +980,15 @@
     await wait(500);
     if (token !== runId) return;
     intro.classList.add('scene-crash');
+    {
+      const r = document.getElementById('terminal')!.getBoundingClientRect();
+      pfBurst(r.left + r.width / 2, r.top + r.height / 2);
+      PF.target = 0.75;
+    }
     await wait(650);
     if (token !== runId) return;
     intro.classList.add('scene-figure');
+    PF.target = 1;
     await wait(3000);
     if (token !== runId) return;
 
@@ -730,6 +997,7 @@
     await wait(750);
     if (token !== runId) return;
     intro.classList.add('scene-title');
+    PF.rise = 1; PF.target = 0.85;
     await wait(TITLE_HOLD);
     if (token !== runId) return;
     finish();
@@ -742,6 +1010,7 @@
     rootEl.classList.add('intro-finished');
     intro.setAttribute('aria-hidden', 'true');
     sessionStorage.setItem('introPlayed', '1');
+    PF.paused = true;
   }
 
   document.getElementById('skipBtn')!.addEventListener('click', finish);
