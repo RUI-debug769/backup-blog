@@ -1,0 +1,278 @@
+---
+// 星空渲染项目调研存档页 — 由 Claude 在 2026-10-23/24 的调研会话中生成
+// 独立页面（不走 BaseLayout）：深色画廊自带完整样式
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星空渲染项目 Demo 巡礼 · MUR DOS LOG</title>
+<meta name="description" content="13 个星空渲染开源项目的逐个核实与实拍存档，外加 ACG 专场与 yui540 魔女站复活记录。">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0b0d12; color: #d5dae3; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; padding: 48px 24px 80px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 600; letter-spacing: .04em; }
+  .sub { color: #8a93a5; margin: 10px 0 8px; font-size: 14px; line-height: 1.7; }
+  .legend { display: flex; gap: 14px; margin: 14px 0 34px; font-size: 12px; color: #8a93a5; flex-wrap: wrap; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+  .ok { background: #4ade80; } .warn { background: #facc15; } .miss { background: #f87171; }
+  h2 { font-size: 15px; color: #9aa4b8; font-weight: 600; margin: 38px 0 16px; letter-spacing: .12em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; }
+  .card { background: #131722; border: 1px solid #232a38; border-radius: 12px; overflow: hidden; transition: transform .18s ease, border-color .18s ease; }
+  .card:hover { transform: translateY(-3px); border-color: #3b4a66; }
+  .card img { width: 100%; display: block; aspect-ratio: 1036/897; object-fit: cover; background: #000; }
+  .body { padding: 14px 16px 16px; }
+  .name { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .note { font-size: 12.5px; color: #93a0b8; line-height: 1.65; margin: 8px 0 10px; }
+  .links { font-size: 12.5px; display: flex; gap: 14px; flex-wrap: wrap; }
+  a { color: #7db4ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .flat { background: #131722; border: 1px solid #232a38; border-radius: 12px; padding: 14px 16px; }
+  .flat .name { font-size: 14px; }
+  .home-link { display: inline-block; margin-top: 40px; font-size: 13px; }
+  footer { margin-top: 46px; font-size: 12px; color: #5d6578; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>星空渲染项目 · 官方 Demo 巡礼</h1>
+  <p class="sub">2026-10-23 调研存档：逐个打开官方在线 Demo 并截图核实。清单 13 个项目：<b>8 个 Demo 可访问并截图，1 个官方 Demo 部署损坏，4 个无法在公开渠道核实存在</b>。</p>
+  <div class="legend">
+    <span><i class="dot ok"></i>Demo 已验证可渲染</span>
+    <span><i class="dot warn"></i>链接存在但有状况</span>
+    <span><i class="dot miss"></i>未能核实 / 无 Demo</span>
+  </div>
+
+  <h2>✅ 已验证的 Demo（点击截图进入在线版）</h2>
+  <div class="grid">
+
+    <div class="card">
+      <a href="https://stellarium-web.org/" target="_blank"><img src="/assets/starry-demos/01-stellarium-web.png" alt="Stellarium Web" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>Stellarium Web Engine</div>
+        <p class="note">天文馆级引擎，Gaia 星表 10 亿+ 恒星、HiPS 巡天、大气模拟。打开即是可交互星图：拖拽旋转天球、滚轮缩放、点星看数据。</p>
+        <div class="links"><a href="https://stellarium-web.org/" target="_blank">Demo ↗</a><a href="https://github.com/Stellarium/stellarium-web-engine" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://sky.docs.pmnd.rs/examples/14-night-sky.html" target="_blank"><img src="/assets/starry-demos/02-pmndrs-sky-night.png" alt="pmndrs sky night" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>@pmndrs/sky（WebGPU 物理天空）</div>
+        <p class="note">截图为「14 — Night sky」实例：月夜、星芒与银河（暗背景下 1.4% 亮像素 = 真实星点渲染）。完整画廊含太空下降到地面、雾霾光柱等 13 个实例。需支持 WebGPU 的浏览器。</p>
+        <div class="links"><a href="https://sky.docs.pmnd.rs/examples/" target="_blank">示例画廊 ↗</a><a href="https://github.com/pmndrs/sky" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://dgreenheck.github.io/webgpu-galaxy/" target="_blank"><img src="/assets/starry-demos/03-webgpu-galaxy.png" alt="webgpu galaxy" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>webgpu-galaxy（TSL 星系着色器）</div>
+        <p class="note">dgreenheck 作品，82★。TSL + WebGPU 计算着色器驱动的星系模拟，截图色彩信息丰富，渲染成功。需支持 WebGPU 的浏览器。</p>
+        <div class="links"><a href="https://dgreenheck.github.io/webgpu-galaxy/" target="_blank">Demo ↗</a><a href="https://github.com/dgreenheck/webgpu-galaxy" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://code-panda.neocities.org/examples/a-starry-sky/v1.2.0/desert?scene=today" target="_blank"><img src="/assets/starry-demos/04-a-starry-sky.png" alt="A-Starry-Sky" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>A-Starry-Sky（A-Frame 天空盒）</div>
+        <p class="note">截图为「旧金山当前时刻的真实天空」。同一 Demo 还有 11 个场景：日全食、月食、1226 年土木大合、火星大气、极光（GPU 密集）等。把 URL 里 scene=today 换成 eclipse / lunar-eclipse / aurora 即可。</p>
+        <div class="links"><a href="https://code-panda.neocities.org/examples/a-starry-sky/v1.2.0/desert?scene=today" target="_blank">Demo ↗</a><a href="https://github.com/Dante83/A-Starry-Sky" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://geoql.github.io/maplibre-gl-starfield/" target="_blank"><img src="/assets/starry-demos/05-maplibre-starfield.png" alt="maplibre starfield" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>@geoql/maplibre-gl-starfield</div>
+        <p class="note">MapLibre 地图 + Three.js 星空天空盒叠加层（银河全景）。截图色彩丰富度全场最高（131 色）。适合地理信息类项目。</p>
+        <div class="links"><a href="https://geoql.github.io/maplibre-gl-starfield/" target="_blank">Demo ↗</a><a href="https://github.com/geoql/maplibre-gl-starfield" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://sparticlesjs.dev" target="_blank"><img src="/assets/starry-demos/06-sparticles.png" alt="sparticles" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>sparticles（轻量 Canvas 粒子）</div>
+        <p class="note">simeydotme 作品，288★。官网首页即粒子演示，可在线调参（数量/形状/速度/视差）并直接导出配置。零依赖，适合首页点缀。</p>
+        <div class="links"><a href="https://sparticlesjs.dev" target="_blank">Demo ↗</a><a href="https://github.com/simeydotme/sparticles" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://my-personal-introduction.pages.dev/" target="_blank"><img src="/assets/starry-demos/07-galaxy-theme-portfolio.png" alt="galaxy theme portfolio" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>galaxy-theme-portfolio</div>
+        <p class="note">FrankWkd-Plus 的个人站「Outwardly Verse」，Three.js 银河主题 + 发光粒子 + 鼠标交互。可直接当落地模板参考。</p>
+        <div class="links"><a href="https://my-personal-introduction.pages.dev/" target="_blank">Demo ↗</a><a href="https://github.com/FrankWkd-Plus/galaxy-theme-portfolio" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://gesualdiafonso.github.io/space-animated-vue/" target="_blank"><img src="/assets/starry-demos/08-space-animated-vue.png" alt="space animated vue" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot warn"></i>space-animated-vue</div>
+        <p class="note">⚠️ 官方 Demo 部署损坏：页面引用 <code>/src/main.ts</code> 返回 404，打开是白屏（截图即纯白）。代码还在仓库里，想看效果需自行 clone 后 <code>npm run dev</code>。</p>
+        <div class="links"><a href="https://gesualdiafonso.github.io/space-animated-vue/" target="_blank">Demo（白屏）↗</a><a href="https://github.com/gesualdiafonso/space-animated-vue" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>❌ 未能核实存在的项目</h2>
+  <div class="grid">
+    <div class="flat">
+      <div class="name"><i class="dot miss"></i>Via Lactea（vialactea）</div>
+      <p class="note">npm 上 <code>vialactea@0.0.1</code> 是占位包，其声明的仓库 <code>lucienerego/vialactea-engine</code> 在 GitHub 上不存在（未公开或已删除）。预发布状态，当前没有任何可看的东西。</p>
+    </div>
+    <div class="flat">
+      <div class="name"><i class="dot miss"></i>skye</div>
+      <p class="note">npm 上 <code>skye</code> 显示已下架（unpublished），GitHub 多轮检索未找到与「零依赖 WebGL2 天空着色器库」描述吻合的项目。</p>
+    </div>
+    <div class="flat">
+      <div class="name"><i class="dot miss"></i>procedural-starfield</div>
+      <p class="note">最接近的是 <a href="https://github.com/ThyMajesty/procedural-starfield-generator" target="_blank">ThyMajesty/procedural-starfield-generator</a>（0★，无 Demo、无主页），无法确认即原清单所指。</p>
+    </div>
+    <div class="flat">
+      <div class="name"><i class="dot miss"></i>Celestial Bloom / Celestial Sphere Shader</div>
+      <p class="note">GitHub / npm 多关键词检索均无与描述吻合的项目（存在同名仓库但内容不符）。这两个名字很可能来自原清单作者的二次转述。</p>
+    </div>
+  </div>
+
+  <h2>🎀 ACG 风星空专场</h2>
+  <div class="grid">
+
+    <div class="card">
+      <a href="https://mika-starry-sea.vercel.app/" target="_blank"><img src="/assets/starry-demos/acg-04-mika-starry-sea.png" alt="星降る海" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>mika-starry-sea《星降る海》⭐本场最佳</div>
+        <p class="note">DarylLi 用 Three.js 还原「超时空辉夜姬」《星降る海》动画场景，57★。截图 456 色、海面与天空层次丰富，是本次唯一真正意义上的「动漫场景级」星空。Vercel 部署，浏览器直连可开（curl 探测不通是误报）。</p>
+        <div class="links"><a href="https://mika-starry-sea.vercel.app/" target="_blank">Demo ↗</a><a href="https://github.com/DarylLi/mika-starry-sea" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://shooting-stars.tekrop.fr" target="_blank"><img src="/assets/starry-demos/acg-03-shooting-stars.png" alt="shooting stars meme" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>Shooting Stars Meme Generator（彩蛋）</div>
+        <p class="note">TeKrop 作品，24★。CSS 动画还原经典「Shooting Stars」梗视频的太空飞行场景，可换自己的图。深色星空渲染确认。不是正经背景库，但梗味十足。</p>
+        <div class="links"><a href="https://shooting-stars.tekrop.fr" target="_blank">Demo ↗</a><a href="https://github.com/TeKrop/shooting-stars-meme-generator" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://zhi-starry-sky.vercel.app" target="_blank"><img src="/assets/starry-demos/acg-06-zhi-starry-sky.png" alt="zhi starry sky" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot warn"></i>zhi_starry_sky（Flutter 组件）</div>
+        <p class="note">27★，Flutter 星空动画 Widget 的 Web 示例。能打开、无报错，但整体是浅色示例页，没有预期的深色星空观感，适合做移动端组件参考而非网页背景。</p>
+        <div class="links"><a href="https://zhi-starry-sky.vercel.app" target="_blank">Demo ↗</a><a href="https://github.com/xcc3641/zhi_starry_sky" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <a href="https://codepen.io/interaminense/full/QyGbXL/" target="_blank"><img src="/assets/starry-demos/acg-07-css3-starry-sky.png" alt="css3 starry sky" loading="lazy"></a>
+      <div class="body">
+        <div class="name"><i class="dot warn"></i>Starry Sky（纯 CSS3，CodePen）</div>
+        <p class="note">interaminense 作品，repo 24★。经典纯 CSS 星空（无任何 JS）。无头浏览器里预览区疑似未完全渲染（CodePen 有反爬拦截），建议手动打开确认——代码本身极简，fork 即用。</p>
+        <div class="links"><a href="https://codepen.io/interaminense/full/QyGbXL/" target="_blank">Demo ↗</a><a href="https://github.com/interaminense/starry-sky" target="_blank">GitHub ↗</a></div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>🪦 遗址考古：yui540 魔女站系列（本站开场的致敬对象）</h2>
+  <div class="grid">
+    <div class="flat">
+      <div class="name"><i class="dot miss"></i>magical-girl.site（DropOut）— 域名已被抢注</div>
+      <p class="note">打开后是英文垃圾内容农场（截图 <code>acg-01</code> 为证：灰框白底的 SEO 页面）。原作已死，但源码还在 <a href="https://github.com/yui540/DropOut" target="_blank">yui540/DropOut</a>（252★）。</p>
+    </div>
+    <div class="flat">
+      <div class="name"><i class="dot miss"></i>夜空ノ贈リ物 — 页面在，动画崩了</div>
+      <p class="note">learn-css-animation.netlify.app 能打开（标题正确），但开场动画在现代浏览器中报 <code>removeChild NotFoundError</code> 崩溃，截图只剩白屏（<code>acg-05</code>）。教程源码在 <a href="https://github.com/yui540/learn-css-animation" target="_blank">yui540/learn-css-animation</a>，成品源码在 <a href="https://github.com/yui540/Yozora_No_Okurimono" target="_blank">Yozora_No_Okurimono</a>（51★）。</p>
+    </div>
+    <div class="flat">
+      <div class="name"><i class="dot miss"></i>yozora.magical-girl.site / palette.yui540.graphics</div>
+      <p class="note">均无法连接。yui540 现役门户是 <a href="https://yui540.com" target="_blank">yui540.com</a>（200 正常），旧 magical-girl.site 域名体系整体沦陷。想致敬魔女站，自部署源码是唯一可靠路径。</p>
+    </div>
+    <div class="flat">
+      <div class="name"><i class="dot miss"></i>meteor-canvas《陪你去看流星雨》</div>
+      <p class="note">gh-pages 上只剩 README（截图 <code>acg-02</code>），真正的演示地址 chentianyuan.xyz 已失效。代码在 <a href="https://github.com/chentianyuan/meteor-canvas" target="_blank">仓库</a>，webpack 工程，可本地跑。</p>
+    </div>
+  </div>
+
+  <h2>📦 无在线 Demo 的星空组件（代码自取）</h2>
+  <div class="grid">
+    <div class="flat">
+      <div class="name">ZERO-DG/vue3-starry-sky ★7</div>
+      <p class="note">Vite + Vue3 星空背景组件库。<a href="https://github.com/ZERO-DG/vue3-starry-sky" target="_blank">GitHub ↗</a></p>
+    </div>
+    <div class="flat">
+      <div class="name">sl1673495/react-starry-sky ★15</div>
+      <p class="note">React + Styled-Component 星空背景组件。<a href="https://github.com/sl1673495/react-starry-sky" target="_blank">GitHub ↗</a></p>
+    </div>
+    <div class="flat">
+      <div class="name">photon12342/starBackground ★23</div>
+      <p class="note">原生 canvas 动态星空背景。<a href="https://github.com/photon12342/starBackground" target="_blank">GitHub ↗</a></p>
+    </div>
+    <div class="flat">
+      <div class="name">ybbthdwqe/star_login ★24</div>
+      <p class="note">星空登录界面（HTML+CSS 框架），适合做落地页骨架。<a href="https://github.com/ybbthdwqe/star_login" target="_blank">GitHub ↗</a></p>
+    </div>
+  </div>
+
+  <h2>🔧 复活记录：本地重建版 夜空ノ贈リ物（实拍）</h2>
+  <div class="grid">
+    <div class="card">
+      <img src="/assets/starry-demos/yozora-local-open-9s.png" alt="开场动画" loading="lazy">
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>开场动画（礼物盒开启）</div>
+        <p class="note">从 GitHub HEAD 重新构建后，开场动画完整跑完、无崩溃。线上崩溃是过期部署 bundle 的问题，不是源码 bug。现代化适配清单：node-sass→dart-sass、sass-loader 升级、补 SCSS 语法错误、OpenSSL legacy provider。</p>
+      </div>
+    </div>
+    <div class="card">
+      <img src="/assets/starry-demos/yozora-local-top.png" alt="主页" loading="lazy">
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>主页（Top）— 薄荷色星空球</div>
+        <p class="note">开场结束后进入的主页：logo + 星空球 + 菜单 + 三段消息动画。全套 70 个 CSS keyframes，零 JS 动画依赖。</p>
+      </div>
+    </div>
+    <div class="card">
+      <img src="/assets/starry-demos/yozora-local-chapter1.png" alt="章节页" loading="lazy">
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>章节页（米色书页设计）</div>
+        <p class="note">markdown 正文 + 内嵌动画示例的书籍页。对文章页设计也有参考价值。</p>
+      </div>
+    </div>
+  </div>
+
+  <h2>⚔️ 开场 A/B 实验（本站 intro）</h2>
+  <div class="grid">
+    <div class="card">
+      <img src="/assets/starry-demos/lab-rain-live.png" alt="雨夜终端" loading="lazy">
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>A · 雨夜终端 v4（本站现役开场）</div>
+        <p class="note">JS 驱动的多幕叙事（城市建立 → CRT 开机 → boot log → 撕裂故障 → 雨中少女 → MUR DOS LOG），约 14 秒，深色赛博。</p>
+      </div>
+    </div>
+    <div class="card">
+      <img src="/assets/starry-demos/lab-witch-live2.png" alt="魔女礼物盒" loading="lazy">
+      <div class="body">
+        <div class="name"><i class="dot ok"></i>B · 魔女礼物盒（yui540 LoadView 移植实验）</div>
+        <p class="note">纯 CSS keyframes，约 6.2 秒后自动淡出。底色薄荷绿是设计本色——box.png 是薄荷底上的浅色礼盒纹理，截图的"平"即正确渲染。事件探针验证：动画时间线与原作完全一致（5.55s 延迟触发 + 0.6s 收幕）。</p>
+      </div>
+    </div>
+  </div>
+
+  <a class="home-link" href="/">← 回到 MUR DOS LOG 首页</a>
+
+  <footer>
+    说明：WebGPU 项目（@pmndrs/sky、webgpu-galaxy）需 Chrome / Edge 113+；本页截图均在无头 Chromium 中实拍，夜空类截图偏暗属正常。<br>
+    检索渠道：GitHub API + npm registry；通用网页搜索服务当时不可用，未能核实的 4 个项目建议持保留态度。调研与截图由 Claude 完成。
+  </footer>
+</div>
+</body>
+</html>
