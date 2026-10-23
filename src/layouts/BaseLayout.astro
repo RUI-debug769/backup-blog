@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import Intro from '../components/Intro.astro';
+import Ambient from '../components/Ambient.astro';
 
 interface Props {
   title?: string;
@@ -68,9 +69,11 @@ const year = new Date().getFullYear();
         <span class="spacer"></span>
         {/* TODO: 备案通过后改为 <a href="https://beian.miit.gov.cn" target="_blank" rel="noopener">京ICP备XXXXXXXX号</a> */}
         <a class="beian" href="https://beian.miit.gov.cn" target="_blank" rel="noopener"></a>
+        <img class="footer-figure" src="/assets/figure-cut-ink.webp" alt="" loading="lazy" draggable="false" />
       </footer>
     </div>
 
+    <Ambient />
     <Intro />
 
     <script>

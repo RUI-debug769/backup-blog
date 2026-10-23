@@ -1,4 +1,11 @@
 /* ============ 设计变量 ============ */
+/* 像素字体：Fusion Pixel 12px（OFL），子集仅含分组标题用字 + ASCII */
+@font-face {
+  font-family: "Fusion Pixel";
+  src: url("/fonts/fusion-pixel-subset.woff2") format("woff2");
+  font-display: swap;
+}
+
 :root {
   --night-1: #1a1b33;
   --night-2: #12131f;
@@ -12,6 +19,7 @@
   --amber: #ffc46b;
   --mono: "SF Mono", "JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace;
   --sans: "Hiragino Sans GB", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --pixel: "Fusion Pixel", var(--mono);
   --reading-width: 680px;
 }
 
@@ -25,18 +33,30 @@ html[data-theme="dark"] {
   --chip: rgba(255, 255, 255, 0.04);
   --chip-hover: rgba(255, 255, 255, 0.08);
   --code-bg: #14162a;
+  --glow: rgba(139, 155, 255, 0.45);
+  /* 氛围光尘：夜 = 萤火/星尘 */
+  --dust-1: #5ce1ff;
+  --dust-2: #8b9bff;
+  --dust-3: #ff5c8a;
 }
 
+/* 雨后清晨：雨夜的霓虹紫稀释成薄雾紫 + 暖纸白，切主题 = 天亮 */
 html[data-theme="light"] {
-  --bg: #f7f8fd;
-  --bg-glow: #eef0fa;
-  --text: #1c1f33;
-  --muted: rgba(28, 31, 51, 0.55);
-  --line: rgba(28, 31, 51, 0.14);
-  --line-strong: rgba(28, 31, 51, 0.38);
-  --chip: rgba(28, 31, 51, 0.04);
-  --chip-hover: rgba(28, 31, 51, 0.08);
-  --code-bg: #eeeef7;
+  --bg: #f6f4fb;
+  --bg-glow: #e9e2f6;
+  --text: #232338;
+  --muted: rgba(35, 35, 56, 0.58);
+  --line: rgba(80, 72, 140, 0.16);
+  --line-strong: rgba(80, 72, 140, 0.4);
+  --chip: rgba(110, 100, 180, 0.06);
+  --chip-hover: rgba(110, 100, 180, 0.11);
+  --code-bg: #ece8f7;
+  --accent: #6672e8;
+  --glow: rgba(102, 114, 232, 0.22);
+  /* 氛围光尘：晨 = 雾紫 / 樱粉 / 朝阳光尘 */
+  --dust-1: #c0b0e4;
+  --dust-2: #e8bcd4;
+  --dust-3: #f0cfa4;
 }
 
 /* ============ 基础 ============ */
@@ -163,8 +183,8 @@ html[data-theme="light"] .icon-moon {
 }
 
 .site-name {
-  font-family: var(--mono);
-  font-weight: 300;
+  font-family: var(--pixel);
+  font-weight: 400;
   font-size: 22px;
   letter-spacing: 0.35em;
   text-indent: 0.35em;
@@ -201,11 +221,35 @@ html[data-theme="light"] .icon-moon {
   font-size: 19px;
   font-weight: 500;
   letter-spacing: 0.02em;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
 .post-item a:hover .post-title {
   color: var(--accent);
+  text-shadow: 0 0 18px var(--glow);
+}
+
+/* hover 时标题末尾一颗十字星闪一下 */
+.post-title::after {
+  content: "✦";
+  margin-left: 8px;
+  font-size: 0.65em;
+  color: var(--cyan);
+  opacity: 0;
+}
+
+html[data-theme="light"] .post-title::after {
+  color: var(--accent);
+}
+
+.post-item a:hover .post-title::after {
+  animation: sparkle-pop 0.7s ease-out;
+}
+
+@keyframes sparkle-pop {
+  0% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.15) rotate(90deg); }
 }
 
 .post-meta {
@@ -310,9 +354,13 @@ html[data-theme="light"] .icon-moon {
   margin-top: 0.4em;
 }
 
+/* 引用块：Galgame 对话框（圆角 + 左侧色条，非对称圆角像气泡） */
 .prose blockquote {
-  padding: 4px 20px;
-  border-left: 2px solid var(--accent);
+  padding: 14px 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px 14px 14px 14px;
+  background: var(--chip);
   color: var(--muted);
 }
 
@@ -370,10 +418,20 @@ html[data-theme="dark"] .astro-code span {
   border: 1px solid var(--line);
 }
 
+/* 分隔线：三颗小星 */
 .prose hr {
   border: 0;
-  border-top: 1px solid var(--line);
   margin: 2.4em 0;
+  text-align: center;
+}
+
+.prose hr::before {
+  content: "✦  ✧  ✦";
+  color: var(--accent);
+  opacity: 0.55;
+  font-size: 12px;
+  letter-spacing: 0.6em;
+  margin-left: 0.6em;
 }
 
 /* ============ 404 ============ */
@@ -400,6 +458,7 @@ html[data-theme="dark"] .astro-code span {
 
 /* ============ 页脚 ============ */
 .site-footer {
+  position: relative;
   margin-top: 96px;
   padding-top: 24px;
   border-top: 1px solid var(--line);
@@ -411,6 +470,22 @@ html[data-theme="dark"] .astro-code span {
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.1em;
+}
+
+/* 角落小剪影：她坐在页脚分割线上 */
+.footer-figure {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% - 6px);
+  height: 110px;
+  opacity: 0.5;
+  pointer-events: none;
+  filter: drop-shadow(0 0 14px rgba(123, 92, 255, 0.3));
+}
+
+html[data-theme="light"] .footer-figure {
+  opacity: 0.35;
+  filter: none;
 }
 
 .site-footer a {
@@ -432,6 +507,21 @@ html[data-theme="dark"] .astro-code span {
   display: none;
 }
 
+/* ============ 氛围光尘（Ambient 组件的 canvas） ============ */
+.ambient {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* 开场播放期间不抢戏 */
+html.intro-on .ambient {
+  display: none;
+}
+
 @media (max-width: 600px) {
   .page {
     padding: 72px 20px 64px;
@@ -439,5 +529,8 @@ html[data-theme="dark"] .astro-code span {
   .toolbar {
     top: 14px;
     right: 14px;
+  }
+  .footer-figure {
+    height: 84px;
   }
 }

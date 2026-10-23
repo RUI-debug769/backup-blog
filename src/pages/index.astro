@@ -12,7 +12,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   essay: '随笔',
 };
 const groups = ['portfolio', 'demo', 'essay']
-  .map((c) => ({ label: CATEGORY_LABEL[c], items: posts.filter((p) => p.data.category === c) }))
+  .map((c) => ({ key: c, label: CATEGORY_LABEL[c], items: posts.filter((p) => p.data.category === c) }))
   .filter((g) => g.items.length > 0);
 
 const fmtDate = (d: Date) =>
@@ -22,7 +22,7 @@ const fmtDate = (d: Date) =>
 <BaseLayout>
   {
     groups.map((group) => (
-      <section class="post-group">
+      <section class:list={['post-group', { 'post-group--cards': group.key === 'portfolio' }]}>
         <h2 class="group-title">{group.label}</h2>
         <ul class="post-list">
           {group.items.map((post) => (
@@ -49,12 +49,51 @@ const fmtDate = (d: Date) =>
   .post-group + .post-group {
     margin-top: 2.6rem;
   }
+
+  /* 分组标题：像素体 + 两侧小星 */
   .group-title {
-    font-family: var(--mono);
+    font-family: var(--pixel);
     font-size: 0.85rem;
     font-weight: 400;
     letter-spacing: 0.3em;
     color: var(--dim);
     margin-bottom: 1rem;
+  }
+  .group-title::before {
+    content: "✦";
+    margin-right: 0.7em;
+    opacity: 0.5;
+  }
+  .group-title::after {
+    content: "✦";
+    margin-left: 0.7em;
+    opacity: 0.5;
+  }
+
+  /* 作品集：渐变描边卡片，hover 微微浮起 */
+  .post-group--cards .post-list {
+    gap: 14px;
+  }
+  .post-group--cards .post-item {
+    padding: 20px 22px;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    background:
+      linear-gradient(var(--chip), var(--chip)) padding-box,
+      linear-gradient(135deg, rgba(139, 155, 255, 0.5), rgba(92, 225, 255, 0.3), rgba(255, 92, 138, 0.3)) border-box;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .post-group--cards .post-item:first-child {
+    border-top: 1px solid transparent;
+  }
+  .post-group--cards .post-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 32px var(--glow);
+  }
+
+  html[data-theme="light"] .post-group--cards .post-item {
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.55)) padding-box,
+      linear-gradient(135deg, rgba(102, 114, 232, 0.35), rgba(192, 176, 228, 0.4), rgba(232, 188, 212, 0.35)) border-box;
   }
 </style>

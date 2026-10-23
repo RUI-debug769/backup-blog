@@ -1,0 +1,119 @@
+---
+//
+// 氛围光尘（全站背景层）
+// - 暗色 = 夜空萤火/星尘（加色发光、缓慢上浮、明灭）
+// - 浅色 = 雨后晨光里的尘埃（普通混合、缓慢飘落，雾紫/樱粉/朝阳）
+// - 颜色全部读 CSS 变量（--dust-1/2/3），主题切换时 MutationObserver 重建
+// - 无交互、密度极低；prefers-reduced-motion 不启动；intro 播放期间 CSS 隐藏
+//
+---
+
+<canvas class="ambient" id="ambientCanvas" aria-hidden="true"></canvas>
+
+<script>
+  interface Mote {
+    x: number; y: number; r: number;
+    vx: number; vy: number;
+    ci: number; a: number; phase: number; tw: number;
+  }
+
+  const canvas = document.getElementById('ambientCanvas') as HTMLCanvasElement | null;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (canvas && !reduced) {
+    const ctx = canvas.getContext('2d')!;
+    let w = 0, h = 0, dpr = 1;
+    let motes: Mote[] = [];
+    let sprites: HTMLCanvasElement[] = [];
+    let dark = true;
+    let last = 0;
+
+    function hexToRgb(hex: string): [number, number, number] {
+      const m = hex.trim().match(/^#([0-9a-f]{6})$/i);
+      if (!m) return [200, 200, 230];
+      const v = parseInt(m[1], 16);
+      return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+    }
+
+    function makeSprite(rgb: [number, number, number]) {
+      const s = document.createElement('canvas');
+      s.width = s.height = 24;
+      const c = s.getContext('2d')!;
+      const g = c.createRadialGradient(12, 12, 0, 12, 12, 12);
+      g.addColorStop(0, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.85)`);
+      g.addColorStop(0.4, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.3)`);
+      g.addColorStop(1, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+      c.fillStyle = g;
+      c.fillRect(0, 0, 24, 24);
+      return s;
+    }
+
+    function readTheme() {
+      dark = document.documentElement.getAttribute('data-theme') !== 'light';
+      const cs = getComputedStyle(document.documentElement);
+      sprites = ['--dust-1', '--dust-2', '--dust-3']
+        .map((v) => makeSprite(hexToRgb(cs.getPropertyValue(v))));
+    }
+
+    function spawn() {
+      const mobile = w < 640;
+      const n = mobile ? 26 : Math.min(64, Math.floor((w * h) / 26000));
+      motes = [];
+      for (let i = 0; i < n; i++) {
+        motes.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: 1.4 + Math.random() * 2.4,
+          // 夜里缓缓上浮，清晨缓缓飘落
+          vx: (Math.random() - 0.5) * 0.12,
+          vy: (dark ? -1 : 1) * (0.04 + Math.random() * 0.12),
+          ci: Math.floor(Math.random() * 3),
+          a: (dark ? 0.06 : 0.1) + Math.random() * (dark ? 0.14 : 0.16),
+          phase: Math.random() * Math.PI * 2,
+          tw: 0.4 + Math.random() * 1.1,
+        });
+      }
+    }
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      w = canvas.clientWidth; h = canvas.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      spawn();
+    }
+
+    function tick(now: number) {
+      requestAnimationFrame(tick);
+      if (document.hidden || getComputedStyle(canvas).display === 'none') { last = now; return; }
+      const dt = Math.min((now - last) / 16.67, 3) || 1;
+      last = now;
+      const t = now / 1000;
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+      for (const m of motes) {
+        m.x += m.vx * dt;
+        m.y += m.vy * dt;
+        if (m.y < -8) m.y = h + 8;
+        if (m.y > h + 8) m.y = -8;
+        if (m.x < -8) m.x = w + 8;
+        if (m.x > w + 8) m.x = -8;
+        const sway = Math.sin(t * 0.3 + m.phase) * 6;
+        const alpha = m.a * (0.6 + 0.4 * Math.sin(t * m.tw + m.phase * 3));
+        ctx.globalAlpha = Math.max(alpha, 0);
+        const s = m.r * 4;
+        ctx.drawImage(sprites[m.ci], m.x + sway - s / 2, m.y - s / 2, s, s);
+      }
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    readTheme();
+    resize();
+    window.addEventListener('resize', resize);
+    new MutationObserver(() => { readTheme(); spawn(); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    requestAnimationFrame((t) => { last = t; tick(t); });
+  }
+</script>
