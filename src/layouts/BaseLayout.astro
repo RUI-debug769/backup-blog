@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Intro from '../components/Intro.astro';
 import Ambient from '../components/Ambient.astro';
+import Live2DChara from '../components/Live2DChara.astro';
 
 interface Props {
   title?: string;
@@ -98,6 +99,7 @@ const year = new Date().getFullYear();
     </div>
 
     <Ambient />
+    <Live2DChara />
     <Intro />
 
     <script>
