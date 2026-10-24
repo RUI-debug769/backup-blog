@@ -16,6 +16,9 @@
     vx: number; vy: number;
     ci: number; a: number; phase: number; tw: number;
   }
+  interface Star {
+    x: number; y: number; r: number; a: number; phase: number; tw: number;
+  }
 
   const canvas = document.getElementById('ambientCanvas') as HTMLCanvasElement | null;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -24,6 +27,7 @@
     const ctx = canvas.getContext('2d')!;
     let w = 0, h = 0, dpr = 1;
     let motes: Mote[] = [];
+    let stars: Star[] = [];
     let sprites: HTMLCanvasElement[] = [];
     let dark = true;
     let last = 0;
@@ -73,9 +77,25 @@
           tw: 0.4 + Math.random() * 1.1,
         });
       }
+      // 像素星野（仅暗色）：小方块星星，和像素字体同源的语言
+      stars = [];
+      if (dark) {
+        const sn = mobile ? 70 : Math.min(150, Math.floor((w * h) / 14000));
+        for (let i = 0; i < sn; i++) {
+          stars.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            r: Math.random() < 0.85 ? 1 : 2,
+            a: 0.12 + Math.random() * 0.3,
+            phase: Math.random() * Math.PI * 2,
+            tw: 0.3 + Math.random() * 0.9,
+          });
+        }
+      }
     }
 
     function resize() {
+      if (canvas.clientWidth === 0) return; // intro 播放中（display:none），等 class 观察者再试
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       w = canvas.clientWidth; h = canvas.clientHeight;
       canvas.width = w * dpr;
@@ -92,6 +112,13 @@
       const t = now / 1000;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+      if (dark) {
+        for (const st of stars) {
+          ctx.globalAlpha = st.a * (0.7 + 0.3 * Math.sin(t * st.tw + st.phase));
+          ctx.fillStyle = '#e6ebff';
+          ctx.fillRect(st.x, st.y, st.r, st.r);
+        }
+      }
       for (const m of motes) {
         m.x += m.vx * dt;
         m.y += m.vy * dt;
@@ -110,10 +137,17 @@
     }
 
     readTheme();
-    resize();
-    window.addEventListener('resize', resize);
-    new MutationObserver(() => { readTheme(); spawn(); })
+    // intro 播放期间 canvas 是 display:none（尺寸 0），等它露出来再初始化尺寸
+    let sized = false;
+    const ensureSized = () => {
+      if (canvas.clientWidth > 0) { sized = true; resize(); }
+    };
+    new MutationObserver(() => { readTheme(); spawn(); if (sized) return; ensureSized(); })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    new MutationObserver(() => { if (!sized) ensureSized(); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    ensureSized();
+    window.addEventListener('resize', resize);
     requestAnimationFrame((t) => { last = t; tick(t); });
   }
 </script>
