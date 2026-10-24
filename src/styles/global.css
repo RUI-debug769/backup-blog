@@ -501,6 +501,13 @@ html[data-theme="dark"] .astro-code span {
   margin-bottom: 12px;
 }
 
+.goedel-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+}
+
 .not-found .code {
   font-family: var(--mono);
   font-weight: 300;
@@ -581,6 +588,97 @@ html[data-theme="light"] .footer-figure {
 /* 开场播放期间不抢戏 */
 html.intro-on .ambient {
   display: none;
+}
+
+/* ============ 数学角 & 范畴论签名 & Konami ============ */
+.math-corner {
+  margin-top: 4rem;
+  text-align: center;
+}
+
+.math-corner canvas {
+  opacity: 0.85;
+}
+
+.math-caption {
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+}
+
+/* 页脚交换图 */
+.math-sig {
+  margin: 72px auto 0;
+  text-align: center;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.math-sig:hover {
+  opacity: 1;
+}
+
+.math-sig svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.math-sig text {
+  fill: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+}
+
+.math-sig .sig-edge {
+  fill: var(--dim);
+  font-size: 9px;
+  font-family: var(--mono);
+}
+
+.math-sig line {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.math-sig marker path {
+  fill: var(--line-strong);
+}
+
+.sig-caption {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--dim);
+}
+
+/* Konami toast */
+.konami-toast {
+  position: fixed;
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%) translateY(-8px);
+  z-index: 30;
+  padding: 10px 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--chip);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: var(--pixel);
+  font-size: 13px;
+  letter-spacing: 0.25em;
+  color: var(--text);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.konami-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 @media (max-width: 600px) {

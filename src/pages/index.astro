@@ -52,7 +52,76 @@ const fmtDate = (d: Date) =>
       </section>
     ))
   }
+
+  {/* 数学角：正二十面体 —— A₅ 的忠实表示 */}
+  <section class="math-corner">
+    <canvas id="icoCanvas" width="150" height="150" aria-hidden="true"></canvas>
+    <p class="math-caption">A₅ · 正二十面体的旋转表示（|A₅| = 60）</p>
+  </section>
 </BaseLayout>
+
+<script>
+  // 数学角：正二十面体旋转线框 —— A₅（60 阶交错群）的忠实旋转表示
+  // 性能：30fps 封顶 + IntersectionObserver 离屏暂停 + reduced-motion 不启动
+  const ico = document.getElementById('icoCanvas') as HTMLCanvasElement | null;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (ico && !reduced) {
+    const ctx = ico.getContext('2d')!;
+    const S = 150;
+    ico.width = S; ico.height = S;
+    const PHI = (1 + Math.sqrt(5)) / 2;
+    const V: number[][] = [];
+    for (const a of [-1, 1]) for (const b of [-1, 1]) {
+      V.push([a, b * PHI, 0], [0, a, b * PHI], [a * PHI, 0, b]);
+    }
+    const norm = Math.sqrt(1 + PHI * PHI);
+    V.forEach((v) => { v[0] /= norm; v[1] /= norm; v[2] /= norm; });
+    const E: [number, number][] = [];
+    for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) {
+      const d = Math.hypot(V[i][0] - V[j][0], V[i][1] - V[j][1], V[i][2] - V[j][2]);
+      if (d < 1.1) E.push([i, j]); // 最短边长 = 2/norm ≈ 1.05
+    }
+    let running = false, last = 0, rot = 0.4;
+    function frame(now: number) {
+      if (!running) return;
+      requestAnimationFrame(frame);
+      if (now - last < 33) return; // 30fps 封顶
+      last = now;
+      rot += 0.006;
+      const cy = Math.cos(rot), sy = Math.sin(rot);
+      const cx = Math.cos(rot * 0.37), sx = Math.sin(rot * 0.37);
+      const P = V.map(([x, y, z]) => {
+        const x1 = x * cy + z * sy, z1 = -x * sy + z * cy; // 绕 Y
+        const y2 = y * cx - z1 * sx, z2 = y * sx + z1 * cx; // 绕 X 微倾
+        return [S / 2 + x1 * 52, S / 2 + y2 * 52, z2];
+      });
+      ctx.clearRect(0, 0, S, S);
+      const cs = getComputedStyle(document.documentElement);
+      const accent = cs.getPropertyValue('--accent').trim() || '#8b9bff';
+      for (const [i, j] of E) {
+        const depth = (P[i][2] + P[j][2]) / 2; // -1..1
+        ctx.globalAlpha = 0.18 + 0.4 * (depth + 1) / 2;
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(P[i][0], P[i][1]);
+        ctx.lineTo(P[j][0], P[j][1]);
+        ctx.stroke();
+      }
+      ctx.fillStyle = accent;
+      for (const p of P) {
+        ctx.globalAlpha = 0.35 + 0.5 * (p[2] + 1) / 2;
+        ctx.fillRect(p[0] - 1.5, p[1] - 1.5, 3, 3); // 像素顶点，与星野同源
+      }
+      ctx.globalAlpha = 1;
+    }
+    new IntersectionObserver((entries) => {
+      const vis = entries[0].isIntersecting;
+      if (vis && !running) { running = true; last = 0; requestAnimationFrame(frame); }
+      if (!vis) running = false;
+    }).observe(ico);
+  }
+</script>
 
 <style>
   .post-group + .post-group {
