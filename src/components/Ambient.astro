@@ -1,11 +1,13 @@
 ---
 //
 // 氛围层（全站背景，单 rAF 循环，性能预算见下）
-// - 暗色 = 夜空：像素星野（明灭）+ 萤火上浮 + 底部波动方程涟漪（PDE 实时求解）
+// - 暗色 = 雨夜意识体：像素星野（明灭）+ 萤火上浮
+//   + Gray-Scott 反应扩散斑图（∂u/∂t = Dᵤ∇²u − uv² + F(1−u)，图灵形态发生，
+//     从噪声涌现结构——意识母题的数学化身，全屏低透明度缓慢生长）
 // - 浅色 = 雨后清晨：晨尘飘落 + 樱花花瓣
-// - Konami 秘籍（↑↑↓↓←→←→BA）：星尘爆发 + 满屏涟漪
+// - Konami 秘籍（↑↑↓↓←→←→BA）：星尘爆发 + 斑图播种
 // - 颜色全部读 CSS 变量（--dust-1/2/3），主题切换时 MutationObserver 重建
-// - 性能：DPR≤1.5，涟漪模拟 30Hz 封顶（160×36 粗网格有限差分），
+// - 性能：DPR≤1.5，反应扩散 128×128 粗网格、30Hz 封顶、离屏渲染放大；
 //   页面隐藏 / intro 播放 / reduced-motion 时全停
 //
 ---
@@ -42,49 +44,70 @@
     let sprites: HTMLCanvasElement[] = [];
     let dark = true;
     let last = 0;
-    let simAcc = 0; // 涟漪模拟的 30Hz 累加器
+    let simAcc = 0; // 反应扩散 30Hz 封顶
+    let seedTimer = 0;
 
-    // ====== 波动方程涟漪（阻尼波 u_tt = c²∇²u，底部一条水面） ======
-    const GW = 160, GH = 36;
-    let wave0 = new Float32Array(GW * GH);
-    let wave1 = new Float32Array(GW * GH);
-    const waveCv = document.createElement('canvas');
-    waveCv.width = GW; waveCv.height = GH;
-    const waveCtx = waveCv.getContext('2d')!;
-    const waveImg = waveCtx.createImageData(GW, GH);
+    // ====== Gray-Scott 反应扩散（图灵斑图） ======
+    // ∂u/∂t = Dᵤ∇²u − uv² + F(1−u) ; ∂v/∂t = Dᵥ∇²v + uv² − (F+k)v
+    const GW = 128, GH = 128;
+    const DU = 0.16, DV = 0.08, FEED = 0.0545, KILL = 0.062; // 迷宫纹 regime
+    let U = new Float32Array(GW * GH).fill(1);
+    let V = new Float32Array(GW * GH);
+    const U2 = new Float32Array(GW * GH);
+    const V2 = new Float32Array(GW * GH);
+    const rdCv = document.createElement('canvas');
+    rdCv.width = GW; rdCv.height = GH;
+    const rdCtx = rdCv.getContext('2d')!;
+    const rdImg = rdCtx.createImageData(GW, GH);
+    let rdColor: [number, number, number] = [139, 155, 255];
 
-    function drop(cx?: number) {
-      const x = cx ?? (8 + Math.random() * (GW - 16));
-      const y = 4 + Math.random() * (GH - 10);
-      const i = (y | 0) * GW + (x | 0);
-      wave1[i] = 1;
-      wave1[i + 1] = wave1[i - 1] = wave1[i + GW] = wave1[i - GW] = 0.7;
-    }
-
-    function waveStep() {
-      const C2 = 0.22, DAMP = 0.984;
-      for (let y = 1; y < GH - 1; y++) {
-        const row = y * GW;
-        for (let x = 1; x < GW - 1; x++) {
-          const i = row + x;
-          const lap = wave1[i - 1] + wave1[i + 1] + wave1[i - GW] + wave1[i + GW] - 4 * wave1[i];
-          wave0[i] = (2 * wave1[i] - wave0[i] + C2 * lap) * DAMP;
+    function rdSeed(cx?: number, cy?: number) {
+      const x0 = cx ?? (10 + Math.random() * (GW - 20));
+      const y0 = cy ?? (10 + Math.random() * (GH - 20));
+      const r = 2 + Math.random() * 3;
+      for (let y = Math.max(0, y0 - r | 0); y < Math.min(GH, y0 + r); y++) {
+        for (let x = Math.max(0, x0 - r | 0); x < Math.min(GW, x0 + r); x++) {
+          const dx = x - x0, dy = y - y0;
+          if (dx * dx + dy * dy < r * r) {
+            const i = y * GW + x;
+            V[i] = 0.5 + Math.random() * 0.5;
+            U[i] = 0.5;
+          }
         }
       }
-      const t = wave0; wave0 = wave1; wave1 = t;
     }
 
-    function waveRender() {
-      const d = waveImg.data;
+    function rdInit() {
+      U.fill(1); V.fill(0);
+      for (let i = 0; i < 12; i++) rdSeed();
+    }
+
+    function rdStep() {
+      for (let y = 0; y < GH; y++) {
+        const yu = ((y + GH - 1) % GH) * GW, yd = ((y + 1) % GH) * GW, row = y * GW;
+        for (let x = 0; x < GW; x++) {
+          const i = row + x;
+          const xl = row + ((x + GW - 1) % GW), xr = row + ((x + 1) % GW);
+          const lapU = U[xl] + U[xr] + U[yu + x] + U[yd + x] - 4 * U[i];
+          const lapV = V[xl] + V[xr] + V[yu + x] + V[yd + x] - 4 * V[i];
+          const uvv = U[i] * V[i] * V[i];
+          U2[i] = U[i] + DU * lapU - uvv + FEED * (1 - U[i]);
+          V2[i] = V[i] + DV * lapV + uvv - (FEED + KILL) * V[i];
+        }
+      }
+      U.set(U2); V.set(V2);
+    }
+
+    function rdRender() {
+      const d = rdImg.data;
+      const [r, g, b] = rdColor;
       for (let i = 0; i < GW * GH; i++) {
-        const v = wave1[i];
-        const a = v > 0.02 ? Math.min(v, 1) * 110 : 0;
-        d[i * 4] = 150; d[i * 4 + 1] = 190; d[i * 4 + 2] = 255;
+        const a = Math.min(V[i] * 1.5, 1) * 30; // 极淡：只是背景里"活着"的纹理
+        d[i * 4] = r; d[i * 4 + 1] = g; d[i * 4 + 2] = b;
         d[i * 4 + 3] = a;
       }
-      waveCtx.putImageData(waveImg, 0, 0);
-      const stripH = h * 0.22;
-      ctx.drawImage(waveCv, 0, h - stripH, w, stripH);
+      rdCtx.putImageData(rdImg, 0, 0);
+      ctx.drawImage(rdCv, 0, 0, w, h);
     }
 
     // ====== 主题与精灵 ======
@@ -111,8 +134,10 @@
     function readTheme() {
       dark = document.documentElement.getAttribute('data-theme') !== 'light';
       const cs = getComputedStyle(document.documentElement);
-      sprites = ['--dust-1', '--dust-2', '--dust-3']
-        .map((v) => makeSprite(hexToRgb(cs.getPropertyValue(v))));
+      const dust = ['--dust-1', '--dust-2', '--dust-3']
+        .map((v) => hexToRgb(cs.getPropertyValue(v)));
+      sprites = dust.map(makeSprite);
+      rdColor = dust[1]; // 斑图用雾蓝/紫罗兰
     }
 
     function spawn() {
@@ -167,7 +192,7 @@
       }
     }
 
-    // ====== Konami 星尘爆发 ======
+    // ====== Konami 星尘爆发 + 斑图播种 ======
     function konamiBurst() {
       for (let i = 0; i < 240; i++) {
         const ang = Math.random() * Math.PI * 2;
@@ -178,7 +203,7 @@
           life: 1, ci: Math.floor(Math.random() * 3),
         });
       }
-      for (let i = 0; i < 8; i++) drop();
+      for (let i = 0; i < 8; i++) rdSeed(); // 斑图同时开花
     }
 
     // ====== 尺寸与生命周期 ======
@@ -192,7 +217,6 @@
       spawn();
     }
 
-    let dropTimer = 0;
     function tick(now: number) {
       requestAnimationFrame(tick);
       if (document.hidden || getComputedStyle(canvas).display === 'none') { last = now; return; }
@@ -201,6 +225,22 @@
       const t = now / 1000;
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+
+      // 反应扩散斑图（暗色底层，30Hz 封顶）
+      if (dark) {
+        simAcc += dt;
+        if (simAcc >= 2) {
+          simAcc = 0;
+          for (let s = 0; s < 6; s++) rdStep();
+          seedTimer -= 1;
+          if (seedTimer <= 0) { rdSeed(); seedTimer = 60 + Math.random() * 90; }
+          ctx.globalAlpha = 1;
+          ctx.imageSmoothingEnabled = true;
+          rdRender();
+        } else {
+          rdRender(); // 非模拟帧也要重画（清屏后）
+        }
+      }
 
       // 像素星野
       if (dark) {
@@ -245,20 +285,6 @@
         }
       }
 
-      // 波动方程涟漪（暗色，30Hz 封顶）
-      if (dark) {
-        simAcc += dt;
-        if (simAcc >= 2) {
-          simAcc = 0;
-          dropTimer -= 1;
-          if (dropTimer <= 0) { drop(); dropTimer = 18 + Math.random() * 30; }
-          waveStep();
-        }
-        ctx.globalAlpha = 0.8;
-        ctx.imageSmoothingEnabled = true;
-        waveRender();
-      }
-
       // Konami 爆发粒子
       for (let i = bursts.length - 1; i >= 0; i--) {
         const b = bursts[i];
@@ -276,6 +302,7 @@
     }
 
     readTheme();
+    rdInit();
     // intro 播放期间 canvas 是 display:none（尺寸 0），等它露出来再初始化尺寸
     let sized = false;
     const ensureSized = () => {
