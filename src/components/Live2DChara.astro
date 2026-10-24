@@ -1,71 +1,42 @@
 ---
-// 底部看板娘群像：六位角色同时在场（不切换）
-//   Live2D：洛天依(Cubism2) / 桃濑日和(Cubism4)
-//   静态立绘：初音未来 / 远雷圆 / 琪亚娜 / 流萤
-// 素材：洛天依 unsignedzhang/luotianyi-live2d · 桃濑日和 KennardWang/VTuber-MomoseHiyori (MIT)
-//       远雷圆 ENRAI 官方预览图 (© Booklista) · 其余官方立绘，版权归权利人，仅个人博客非商业展示
-const CHARS = [
-  { id: 'miku', name: '初音未来', kind: 'still', src: '/live2d/stills/miku.webp' },
-  { id: 'tianyi', name: '洛天依', kind: 'live2d', src: '/live2d/tianyi/model.json' },
-  { id: 'enrai', name: '远雷圆', kind: 'still', src: '/live2d/stills/enrai.webp' },
-  { id: 'hiyori', name: '桃濑日和', kind: 'live2d', src: '/live2d/hiyori/hiyori_pro_t08.model3.json' },
-  { id: 'kiana', name: '琪亚娜', kind: 'still', src: '/live2d/stills/kiana.webp' },
-  { id: 'firefly', name: '流萤', kind: 'still', src: '/live2d/stills/firefly.webp' },
-] as const;
+// 两位可自由拖动的看板娘（共用一个 WebGL 画布，避免多上下文互相干扰）
+//   洛天依  ← SheepLiu712/Agent-LuoTianyi（client/res/live2d/models/luo，非商业免费，模型作者：火爆鸡王）
+//   桃濑日和 ← KennardWang/VTuber-MomoseHiyori（MIT）
+// 交互：按住拖动；单击播放动作；位置记在 localStorage
 ---
 
-<div class="l2d-dock" id="l2dDock">
-  <button class="l2d-tab" id="l2dTab" type="button" aria-label="收起看板娘">✕</button>
-  <div class="l2d-stage" id="l2dStage">
-    {
-      CHARS.map((c) => (
-        <figure class="l2d-figure" data-id={c.id} data-kind={c.kind} data-src={c.src}>
-          <div class="l2d-slot" />
-          <figcaption class="l2d-name">{c.name}</figcaption>
-        </figure>
-      ))
-    }
-  </div>
-  <button class="l2d-fab" id="l2dFab" type="button" aria-label="召唤看板娘">✦ 她们</button>
+<div class="l2d-layer" id="l2dLayer" aria-hidden="true"></div>
+
+<div class="l2d-handle" data-id="tianyi" data-src="/live2d/tianyi/model.model3.json">
+  <span class="l2d-name">洛天依</span>
+</div>
+
+<div class="l2d-handle" data-id="hiyori" data-src="/live2d/hiyori/hiyori_pro_t08.model3.json">
+  <span class="l2d-name">桃濑日和</span>
 </div>
 
 <script>
-  const dock = document.getElementById('l2dDock')!;
-  const stage = document.getElementById('l2dStage')!;
-  const tab = document.getElementById('l2dTab')!;
-  const fab = document.getElementById('l2dFab')!;
-
-  const LS_CLOSED = 'l2dClosed';
+  const LS_POS = 'l2dPos';
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function setOpen(open: boolean) {
-    dock.classList.toggle('is-open', open);
-    if (open) localStorage.removeItem(LS_CLOSED);
-    else localStorage.setItem(LS_CLOSED, '1');
-  }
-  setOpen(localStorage.getItem(LS_CLOSED) !== '1');
-  tab.addEventListener('click', () => setOpen(false));
-  fab.addEventListener('click', () => setOpen(true));
-
-  interface Slot {
-    root: HTMLElement;
-    box: HTMLElement;
-    kind: string;
+  interface Entry {
+    el: HTMLElement;
+    id: string;
     src: string;
-    name: string;
+    model: any;
   }
 
-  const slots: Slot[] = [...stage.querySelectorAll<HTMLElement>('.l2d-figure')].map((root) => ({
-    root,
-    box: root.querySelector<HTMLElement>('.l2d-slot')!,
-    kind: root.dataset.kind || 'still',
-    src: root.dataset.src || '',
-    name: root.querySelector('.l2d-name')?.textContent || '',
+  const entries: Entry[] = [...document.querySelectorAll<HTMLElement>('.l2d-handle')].map((el) => ({
+    el,
+    id: el.dataset.id || '',
+    src: el.dataset.src || '',
+    model: null,
   }));
+
+  const layer = document.getElementById('l2dLayer')!;
 
   // ---------- 运行时 ----------
   let runtimeReady: Promise<void> | null = null;
-  const apps = new Map<HTMLElement, any>();
 
   function loadScript(src: string) {
     return new Promise<void>((resolve, reject) => {
@@ -85,310 +56,285 @@ const CHARS = [
         if (!(window as any).Live2D) await loadScript('/lib/live2d/live2d.min.js'); // Cubism 2 核心
         if (!(window as any).Live2DCubismCore) await loadScript('/lib/live2d/live2dcubismcore.min.js'); // Cubism 4 核心
         const PIXI = (window as any).PIXI;
-        // 合并版（同时注册 Cubism2 + Cubism4 运行时）；分开加载会互相覆盖注册表
-        if (!PIXI.live2d) await loadScript('/lib/live2d/index.min.js');
+        if (!PIXI.live2d) await loadScript('/lib/live2d/index.min.js'); // 合并版，同时注册 v2/v4
+        try {
+          const ready = PIXI?.live2d?.cubism4Ready;
+          if (ready && typeof ready.then === 'function') await ready;
+        } catch {}
       })();
     }
     return runtimeReady;
   }
 
-  function fallbackImage(s: Slot) {
-    if (s.box.querySelector('img')) return;
-    const img = document.createElement('img');
-    img.className = 'l2d-still';
-    img.alt = s.name;
-    img.src = '/live2d/stills/miku.webp';
-    s.box.appendChild(img);
+  // ---------- 位置 ----------
+  interface Pos { x: number; y: number }
+  const stored: Record<string, Pos> = (() => {
+    try { return JSON.parse(localStorage.getItem(LS_POS) || '{}'); } catch { return {}; }
+  })();
+
+  function clampPos(x: number, y: number, el: HTMLElement) {
+    const w = el.offsetWidth || 150;
+    const h = el.offsetHeight || 210;
+    return {
+      x: Math.max(Math.min(x, window.innerWidth - 60), -w + 60),
+      y: Math.max(Math.min(y, window.innerHeight - 60), 0),
+    };
   }
 
-  function initStill(s: Slot) {
-    if (s.box.querySelector('img')) return;
-    const img = document.createElement('img');
-    img.className = 'l2d-still';
-    img.alt = s.name;
-    img.src = s.src;
-    img.decoding = 'async';
-    img.draggable = false;
-    s.box.appendChild(img);
+  function applyPos(el: HTMLElement, x: number, y: number) {
+    const p = clampPos(x, y, el);
+    el.style.left = p.x + 'px';
+    el.style.top = p.y + 'px';
   }
 
-  function destroyApp(s: Slot) {
-    const app = apps.get(s.box);
-    if (app) {
-      try { app.destroy(true, { children: true }); } catch {}
-      apps.delete(s.box);
-    } else {
-      s.box.querySelectorAll('canvas').forEach((c) => c.remove());
+  function defaultPos(el: HTMLElement, index: number) {
+    const w = el.offsetWidth || 150;
+    const h = el.offsetHeight || 210;
+    const gap = 12;
+    // 洛天依在最右，日和在左侧
+    if (index === 0) return { x: window.innerWidth - w - 20, y: window.innerHeight - h - 20 };
+    return { x: window.innerWidth - w * 2 - gap - 20, y: window.innerHeight - h - 20 };
+  }
+
+  function savePos(id: string, el: HTMLElement) {
+    stored[id] = { x: parseFloat(el.style.left) || 0, y: parseFloat(el.style.top) || 0 };
+    try { localStorage.setItem(LS_POS, JSON.stringify(stored)); } catch {}
+  }
+
+  function validPos(p: Pos | undefined, el: HTMLElement) {
+    if (!p) return false;
+    const w = el.offsetWidth || 150;
+    return (
+      Number.isFinite(p.x) && Number.isFinite(p.y) &&
+      p.x > -w * 0.5 && p.x <= window.innerWidth - 40 &&
+      p.y >= 0 && p.y <= window.innerHeight - 40
+    );
+  }
+
+  // ---------- 画面 ----------
+  let app: any = null;
+
+  function layoutModel(e: Entry) {
+    if (!app || !e.model) return;
+    const r = e.el.getBoundingClientRect();
+    const m = e.model;
+    const scale = (r.height / m.internalModel.originalHeight) * 1.02;
+    m.scale.set(scale);
+    m.x = r.left + (r.width - m.width) / 2;
+    m.y = r.top + r.height - m.height + 3;
+  }
+
+  async function boot() {
+    await ensureRuntime();
+    const PIXI = (window as any).PIXI;
+
+    app = new PIXI.Application({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      transparent: true,
+      // 抗锯齿/高分辨率在部分环境会让 Cubism 着色器失效
+      antialias: false,
+      resolution: 1,
+      autoStart: !reduced,
+    });
+    const canvas = app.view as HTMLCanvasElement;
+    canvas.className = 'l2d-canvas';
+    layer.appendChild(canvas);
+
+    // 串行加载，避免并发初始化互相干扰
+    for (const e of entries) {
+      try {
+        const m = await PIXI.live2d.Live2DModel.from(e.src);
+        e.model = m;
+        app.stage.addChild(m);
+        layoutModel(e);
+      } catch (err) {
+        console.warn('[live2d]', e.id, err);
+      }
     }
+    app.render();
   }
 
-  async function initLive2D(s: Slot) {
-    try {
-      await ensureRuntime();
-      if (apps.has(s.box)) return;
-      const PIXI = (window as any).PIXI;
-      const w = s.box.clientWidth || 118;
-      const h = s.box.clientHeight || 172;
-      const app = new PIXI.Application({
-        width: w,
-        height: h,
-        transparent: true,
-        antialias: true,
-        autoDensity: true,
-        resolution: Math.min(2, window.devicePixelRatio || 1),
-      });
-      s.box.appendChild(app.view as HTMLCanvasElement);
-      apps.set(s.box, app);
-
-      const m = await PIXI.live2d.Live2DModel.from(s.src, { autoInteract: !reduced });
-      if (!apps.has(s.box) || app.destroyed) { try { m.destroy(); } catch {} return; }
-
-      app.stage.addChild(m);
-      const scale = (h / m.height) * 1.02;
-      m.scale.set(scale);
-      m.x = (w - m.width) / 2;
-      m.y = h - m.height + 3;
-
-      m.on('hit', (areas: string[]) => {
-        try {
-          if (areas.includes('head')) m.motion('flick_head');
-          else m.motion('tap_body');
-        } catch {}
-      });
-
-      if (reduced) app.stop();
-    } catch (e) {
-      console.warn('[live2d]', e);
-      fallbackImage(s); // 失败也保证「她在场」
-    }
+  function bootOnce() {
+    boot().catch((e) => console.warn('[live2d]', e));
   }
 
-  function initAll() {
-    for (const s of slots) {
-      if (s.kind === 'still') initStill(s);
-      else initLive2D(s);
-    }
-  }
-
-  // 首屏不抢资源：空闲时构建
-  const kick = () => initAll();
   if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(kick, { timeout: 2500 });
+    (window as any).requestIdleCallback(bootOnce, { timeout: 2500 });
   } else {
-    setTimeout(kick, 1200);
+    setTimeout(bootOnce, 1200);
   }
 
-  // 页面隐藏时暂停渲染，省电
-  document.addEventListener('visibilitychange', () => {
-    for (const app of apps.values()) {
-      try { document.hidden ? app.stop() : app.start(); } catch {}
-    }
+  // ---------- 初始落位 ----------
+  function positionAll() {
+    entries.forEach((e, index) => {
+      const s = stored[e.id];
+      if (validPos(s, e.el)) applyPos(e.el, s!.x, s!.y);
+      else {
+        const d = defaultPos(e.el, index);
+        applyPos(e.el, d.x, d.y);
+        savePos(e.id, e.el);
+      }
+      layoutModel(e);
+    });
+  }
+  positionAll();
+  requestAnimationFrame(positionAll);
+  setTimeout(positionAll, 400);
+
+  // ---------- 拖动 ----------
+  entries.forEach((e) => {
+    let pid: number | null = null;
+    let sx = 0, sy = 0, ox = 0, oy = 0, moved = false;
+
+    e.el.addEventListener('pointerdown', (ev) => {
+      if (ev.button !== 0) return;
+      pid = ev.pointerId;
+      try { e.el.setPointerCapture(pid); } catch {}
+      sx = ev.clientX; sy = ev.clientY;
+      ox = parseFloat(e.el.style.left) || 0;
+      oy = parseFloat(e.el.style.top) || 0;
+      moved = false;
+      e.el.classList.add('is-dragging');
+      ev.preventDefault();
+    });
+
+    e.el.addEventListener('pointermove', (ev) => {
+      if (pid === null || ev.pointerId !== pid) return;
+      const dx = ev.clientX - sx;
+      const dy = ev.clientY - sy;
+      if (!moved && Math.abs(dx) + Math.abs(dy) > 4) moved = true;
+      if (moved) {
+        applyPos(e.el, ox + dx, oy + dy);
+        layoutModel(e);
+      }
+    });
+
+    const end = (ev: PointerEvent) => {
+      if (pid === null || ev.pointerId !== pid) return;
+      try { e.el.releasePointerCapture(pid); } catch {}
+      pid = null;
+      e.el.classList.remove('is-dragging');
+      if (moved) savePos(e.id, e.el);
+      else poke(e);
+    };
+    e.el.addEventListener('pointerup', end);
+    e.el.addEventListener('pointercancel', end);
+    e.el.addEventListener('touchmove', (ev) => { if (pid !== null) ev.preventDefault(); }, { passive: false });
   });
 
-  // 尺寸变化：重建 Live2D 画布
+  function poke(e: Entry) {
+    if (!e.model || e.id !== 'tianyi') return;
+    try {
+      const taps = ['Tap8', 'Tap头', 'Tap袖', 'Tap耳机', 'Tap辫子', 'Tap左腿'];
+      e.model.motion(taps[Math.floor(Math.random() * taps.length)]);
+    } catch {}
+  }
+
+  // ---------- 鼠标跟随 ----------
+  if (!reduced) {
+    let last = 0;
+    window.addEventListener('pointermove', (ev) => {
+      const now = performance.now();
+      if (now - last < 50) return;
+      last = now;
+      for (const e of entries) {
+        if (!e.model) continue;
+        try { e.model.focus(ev.clientX, ev.clientY); } catch {}
+      }
+    }, { passive: true });
+  }
+
+  // ---------- 自适应 ----------
+  document.addEventListener('visibilitychange', () => {
+    if (!app) return;
+    try { document.hidden ? app.stop() : app.start(); } catch {}
+  });
+
   let resizeTimer: number | undefined;
   window.addEventListener('resize', () => {
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
-      for (const s of slots) {
-        if (s.kind !== 'live2d') continue;
-        destroyApp(s);
-        initLive2D(s);
-      }
-    }, 400);
+      if (!app) return;
+      app.renderer.resize(window.innerWidth, window.innerHeight);
+      entries.forEach((e) => {
+        const r = e.el.getBoundingClientRect();
+        applyPos(e.el, r.left, r.top);
+        savePos(e.id, e.el);
+        layoutModel(e);
+      });
+      app.render();
+    }, 300);
   });
 </script>
 
 <style>
-  /* ---------- 底部舞台 ---------- */
-  .l2d-dock {
+  .l2d-layer {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     z-index: 15;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
     pointer-events: none;
-    transition: opacity 0.4s ease, transform 0.4s ease;
+    transition: opacity 0.4s ease;
   }
 
-  /* 开场播放期间让位 */
-  html.intro-on .l2d-dock {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  .l2d-stage {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: clamp(2px, 1.2vw, 18px);
-    padding: 0 56px calc(env(safe-area-inset-bottom, 0px) + 2px);
-    max-width: 100%;
-    pointer-events: auto;
-    transition: opacity 0.35s ease, transform 0.35s ease;
-  }
-
-  .l2d-dock:not(.is-open) .l2d-stage {
-    opacity: 0;
-    transform: translateY(30px);
-    pointer-events: none;
-  }
-
-  .l2d-figure {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 0;
-    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1);
-    will-change: transform;
-  }
-
-  .l2d-figure:hover {
-    transform: translateY(-6px);
-  }
-
-  .l2d-slot {
-    position: relative;
-    width: clamp(78px, 8.2vw, 132px);
-    height: clamp(120px, 12.2vw, 196px);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    overflow: hidden;
-  }
-
-  .l2d-slot :global(canvas) {
+  .l2d-layer :global(canvas.l2d-canvas) {
     display: block;
     width: 100% !important;
     height: 100% !important;
   }
 
-  .l2d-slot :global(.l2d-still) {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    object-position: bottom center;
-    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3));
-    animation: l2d-float 6s ease-in-out infinite;
+  .l2d-handle {
+    position: fixed;
+    width: clamp(120px, 12vw, 180px);
+    height: clamp(160px, 16vw, 240px);
+    z-index: 16;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: filter 0.25s ease;
   }
 
-  /* 远雷圆只有带背景的官方预览图，做成小卡片，避免背景方块突兀 */
-  .l2d-figure[data-id="enrai"] :global(.l2d-still) {
-    border-radius: 9px;
-    border: 1px solid var(--line);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  .l2d-handle:hover {
+    filter: drop-shadow(0 0 12px var(--glow));
   }
 
-  .l2d-figure:nth-child(2n) :global(.l2d-still) {
-    animation-delay: -2.4s;
-  }
-  .l2d-figure:nth-child(3n) :global(.l2d-still) {
-    animation-delay: -4.1s;
+  .l2d-handle.is-dragging {
+    cursor: grabbing;
   }
 
-  @keyframes l2d-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .l2d-slot :global(.l2d-still) { animation: none; }
+  /* 开场播放期间让位 */
+  html.intro-on .l2d-layer,
+  html.intro-on .l2d-handle {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .l2d-name {
-    margin-top: 4px;
+    position: absolute;
+    left: 50%;
+    bottom: -4px;
+    transform: translate(-50%, 4px);
     font-family: var(--pixel);
     font-size: 9px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     color: var(--dim);
     opacity: 0;
-    transform: translateY(4px);
     transition: opacity 0.25s ease, transform 0.25s ease;
     pointer-events: none;
     white-space: nowrap;
   }
 
-  .l2d-figure:hover .l2d-name {
+  .l2d-handle:hover .l2d-name,
+  .l2d-handle.is-dragging .l2d-name {
     opacity: 1;
-    transform: none;
-  }
-
-  /* 收起 / 召唤 */
-  .l2d-tab {
-    position: absolute;
-    right: 12px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
-    width: 28px;
-    height: 28px;
-    border: 1px solid var(--line);
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--chip) 88%, transparent);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: var(--muted);
-    font-size: 11px;
-    line-height: 1;
-    cursor: pointer;
-    pointer-events: auto;
-    opacity: 0.55;
-    transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-  }
-
-  .l2d-tab:hover {
-    opacity: 1;
-    color: var(--text);
-    border-color: var(--line-strong);
-  }
-
-  .l2d-dock:not(.is-open) .l2d-tab {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .l2d-fab {
-    position: absolute;
-    right: 14px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-    padding: 8px 14px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--chip) 90%, transparent);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    color: var(--accent);
-    font-family: var(--pixel);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    cursor: pointer;
-    pointer-events: auto;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: opacity 0.3s ease, transform 0.3s ease, border-color 0.2s ease;
-  }
-
-  .l2d-dock:not(.is-open) .l2d-fab {
-    opacity: 1;
-    transform: none;
-  }
-
-  .l2d-fab:hover {
-    border-color: var(--accent);
+    transform: translate(-50%, 0);
   }
 
   @media (max-width: 600px) {
-    .l2d-stage {
-      gap: 0;
-      padding: 0 44px;
-    }
-    .l2d-slot {
-      width: clamp(46px, 13vw, 70px);
-      height: clamp(72px, 19vw, 110px);
-    }
-    .l2d-name {
-      display: none;
+    .l2d-handle {
+      width: clamp(96px, 26vw, 130px);
+      height: clamp(130px, 35vw, 176px);
     }
   }
 </style>
