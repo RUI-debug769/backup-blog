@@ -16,7 +16,7 @@
 </div>
 
 <script>
-  const LS_POS = 'l2dPos2'; // v2：存相对右下角的偏移 {dx, dy}
+  const LS_POS = 'l2dPos3'; // v3：存 {side, dx, dy}，锚定左/右两侧
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   interface Entry {
@@ -67,7 +67,7 @@
   }
 
   // ---------- 位置（相对右下角的偏移） ----------
-  interface Pos { dx: number; dy: number }
+  interface Pos { side: 'left' | 'right'; dx: number; dy: number }
 
   const stored: Record<string, Pos> = (() => {
     try { return JSON.parse(localStorage.getItem(LS_POS) || '{}'); } catch { return {}; }
@@ -88,12 +88,17 @@
 
   function applyStored(el: HTMLElement, p: Pos) {
     const { w, h } = sizeOf(el);
-    place(el, window.innerWidth - w - p.dx, window.innerHeight - h - p.dy);
+    const left = p.side === 'left' ? p.dx : window.innerWidth - w - p.dx;
+    place(el, left, window.innerHeight - h - p.dy);
   }
 
   function currentPos(el: HTMLElement): Pos {
     const r = el.getBoundingClientRect();
-    return { dx: window.innerWidth - (r.left + r.width), dy: window.innerHeight - (r.top + r.height) };
+    const dy = window.innerHeight - (r.top + r.height);
+    // 靠哪半边就锚定哪一侧，缩放时贴着该侧不动
+    return r.left + r.width / 2 < window.innerWidth / 2
+      ? { side: 'left', dx: r.left, dy }
+      : { side: 'right', dx: window.innerWidth - (r.left + r.width), dy };
   }
 
   function savePos(id: string, el: HTMLElement) {
@@ -102,19 +107,18 @@
   }
 
   function defaultPos(el: HTMLElement, index: number): Pos {
-    const { w } = sizeOf(el);
-    // 洛天依贴右下角，桃濑日和在它左侧
-    if (index === 0) return { dx: 20, dy: 20 };
-    return { dx: 20 + w + 12, dy: 20 };
+    // 桃濑日和在左，洛天依在右
+    return index === 0 ? { side: 'right', dx: 20, dy: 20 } : { side: 'left', dx: 20, dy: 20 };
   }
 
   function validPos(p: Pos | undefined, el: HTMLElement) {
     if (!p) return false;
-    const { w } = sizeOf(el);
+    const { w, h } = sizeOf(el);
+    if (p.side !== 'left' && p.side !== 'right') return false;
     return (
       Number.isFinite(p.dx) && Number.isFinite(p.dy) &&
       p.dx > -w * 0.5 && p.dx < window.innerWidth &&
-      p.dy > -sizeOf(el).h * 0.5 && p.dy < window.innerHeight
+      p.dy > -h * 0.5 && p.dy < window.innerHeight
     );
   }
 
@@ -175,6 +179,8 @@
   // ---------- 初始落位 ----------
   let placed = false;
   function positionAll() {
+    // 视口尚未有效（隐藏面板/预渲染时 innerWidth 可能为 0）就稍后再来，避免存下错误坐标
+    if (window.innerWidth < 200) { setTimeout(positionAll, 300); return; }
     entries.forEach((e, index) => {
       const s = stored[e.id];
       if (validPos(s, e.el)) applyStored(e.el, s!);
