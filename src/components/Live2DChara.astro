@@ -2,7 +2,7 @@
 // 两位可自由拖动的看板娘（共用一个 WebGL 画布，避免多上下文互相干扰）
 //   洛天依  ← SheepLiu712/Agent-LuoTianyi（client/res/live2d/models/luo，非商业免费，模型作者：火爆鸡王）
 //   桃濑日和 ← KennardWang/VTuber-MomoseHiyori（MIT）
-// 交互：按住拖动；单击播放动作；位置记在 localStorage
+// 交互：按住拖动；单击播放动作；位置相对右下角记录，窗口缩放后仍贴边
 ---
 
 <div class="l2d-layer" id="l2dLayer" aria-hidden="true"></div>
@@ -16,7 +16,7 @@
 </div>
 
 <script>
-  const LS_POS = 'l2dPos';
+  const LS_POS = 'l2dPos2'; // v2：存相对右下角的偏移 {dx, dy}
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   interface Entry {
@@ -66,48 +66,55 @@
     return runtimeReady;
   }
 
-  // ---------- 位置 ----------
-  interface Pos { x: number; y: number }
+  // ---------- 位置（相对右下角的偏移） ----------
+  interface Pos { dx: number; dy: number }
+
   const stored: Record<string, Pos> = (() => {
     try { return JSON.parse(localStorage.getItem(LS_POS) || '{}'); } catch { return {}; }
   })();
 
-  function clampPos(x: number, y: number, el: HTMLElement) {
-    const w = el.offsetWidth || 150;
-    const h = el.offsetHeight || 210;
-    return {
-      x: Math.max(Math.min(x, window.innerWidth - 60), -w + 60),
-      y: Math.max(Math.min(y, window.innerHeight - 60), 0),
-    };
+  function sizeOf(el: HTMLElement) {
+    return { w: el.offsetWidth || 150, h: el.offsetHeight || 210 };
   }
 
-  function applyPos(el: HTMLElement, x: number, y: number) {
-    const p = clampPos(x, y, el);
-    el.style.left = p.x + 'px';
-    el.style.top = p.y + 'px';
+  // 保留至少 60px 在视口内
+  function place(el: HTMLElement, left: number, top: number) {
+    const { w, h } = sizeOf(el);
+    const x = Math.max(Math.min(left, window.innerWidth - 60), -w + 60);
+    const y = Math.max(Math.min(top, window.innerHeight - 60), 0);
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
   }
 
-  function defaultPos(el: HTMLElement, index: number) {
-    const w = el.offsetWidth || 150;
-    const h = el.offsetHeight || 210;
-    const gap = 12;
-    // 洛天依在最右，日和在左侧
-    if (index === 0) return { x: window.innerWidth - w - 20, y: window.innerHeight - h - 20 };
-    return { x: window.innerWidth - w * 2 - gap - 20, y: window.innerHeight - h - 20 };
+  function applyStored(el: HTMLElement, p: Pos) {
+    const { w, h } = sizeOf(el);
+    place(el, window.innerWidth - w - p.dx, window.innerHeight - h - p.dy);
+  }
+
+  function currentPos(el: HTMLElement): Pos {
+    const r = el.getBoundingClientRect();
+    return { dx: window.innerWidth - (r.left + r.width), dy: window.innerHeight - (r.top + r.height) };
   }
 
   function savePos(id: string, el: HTMLElement) {
-    stored[id] = { x: parseFloat(el.style.left) || 0, y: parseFloat(el.style.top) || 0 };
+    stored[id] = currentPos(el);
     try { localStorage.setItem(LS_POS, JSON.stringify(stored)); } catch {}
+  }
+
+  function defaultPos(el: HTMLElement, index: number): Pos {
+    const { w } = sizeOf(el);
+    // 洛天依贴右下角，桃濑日和在它左侧
+    if (index === 0) return { dx: 20, dy: 20 };
+    return { dx: 20 + w + 12, dy: 20 };
   }
 
   function validPos(p: Pos | undefined, el: HTMLElement) {
     if (!p) return false;
-    const w = el.offsetWidth || 150;
+    const { w } = sizeOf(el);
     return (
-      Number.isFinite(p.x) && Number.isFinite(p.y) &&
-      p.x > -w * 0.5 && p.x <= window.innerWidth - 40 &&
-      p.y >= 0 && p.y <= window.innerHeight - 40
+      Number.isFinite(p.dx) && Number.isFinite(p.dy) &&
+      p.dx > -w * 0.5 && p.dx < window.innerWidth &&
+      p.dy > -sizeOf(el).h * 0.5 && p.dy < window.innerHeight
     );
   }
 
@@ -166,17 +173,19 @@
   }
 
   // ---------- 初始落位 ----------
+  let placed = false;
   function positionAll() {
     entries.forEach((e, index) => {
       const s = stored[e.id];
-      if (validPos(s, e.el)) applyPos(e.el, s!.x, s!.y);
+      if (validPos(s, e.el)) applyStored(e.el, s!);
       else {
         const d = defaultPos(e.el, index);
-        applyPos(e.el, d.x, d.y);
+        applyStored(e.el, d);
         savePos(e.id, e.el);
       }
       layoutModel(e);
     });
+    placed = true;
   }
   positionAll();
   requestAnimationFrame(positionAll);
@@ -192,8 +201,8 @@
       pid = ev.pointerId;
       try { e.el.setPointerCapture(pid); } catch {}
       sx = ev.clientX; sy = ev.clientY;
-      ox = parseFloat(e.el.style.left) || 0;
-      oy = parseFloat(e.el.style.top) || 0;
+      const r = e.el.getBoundingClientRect();
+      ox = r.left; oy = r.top;
       moved = false;
       e.el.classList.add('is-dragging');
       ev.preventDefault();
@@ -205,7 +214,7 @@
       const dy = ev.clientY - sy;
       if (!moved && Math.abs(dx) + Math.abs(dy) > 4) moved = true;
       if (moved) {
-        applyPos(e.el, ox + dx, oy + dy);
+        place(e.el, ox + dx, oy + dy);
         layoutModel(e);
       }
     });
@@ -255,13 +264,13 @@
   window.addEventListener('resize', () => {
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(() => {
-      if (!app) return;
+      if (!app || !placed) return; // 落位前忽略 resize，避免把静态位置误存为坐标
       app.renderer.resize(window.innerWidth, window.innerHeight);
       entries.forEach((e) => {
-        const r = e.el.getBoundingClientRect();
-        applyPos(e.el, r.left, r.top);
-        savePos(e.id, e.el);
+        const p = stored[e.id] || currentPos(e.el);
+        applyStored(e.el, p);
         layoutModel(e);
+        savePos(e.id, e.el);
       });
       app.render();
     }, 300);
