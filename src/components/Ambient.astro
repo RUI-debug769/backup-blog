@@ -102,7 +102,7 @@
       const d = rdImg.data;
       const [r, g, b] = rdColor;
       for (let i = 0; i < GW * GH; i++) {
-        const a = Math.min(V[i] * 1.5, 1) * 30; // 极淡：只是背景里"活着"的纹理
+        const a = Math.min(V[i] * 1.5, 1) * 52; // 淡而可见：背景里"活着"的纹理
         d[i * 4] = r; d[i * 4 + 1] = g; d[i * 4 + 2] = b;
         d[i * 4 + 3] = a;
       }
@@ -153,7 +153,7 @@
           vx: (Math.random() - 0.5) * 0.12,
           vy: (dark ? -1 : 1) * (0.04 + Math.random() * 0.12),
           ci: Math.floor(Math.random() * 3),
-          a: (dark ? 0.06 : 0.1) + Math.random() * (dark ? 0.14 : 0.16),
+          a: (dark ? 0.09 : 0.16) + Math.random() * (dark ? 0.17 : 0.22),
           phase: Math.random() * Math.PI * 2,
           tw: 0.4 + Math.random() * 1.1,
         });
@@ -161,13 +161,13 @@
       // 像素星野（仅暗色）：小方块星星，和像素字体同源的语言
       stars = [];
       if (dark) {
-        const sn = mobile ? 70 : Math.min(150, Math.floor((w * h) / 14000));
+        const sn = mobile ? 90 : Math.min(200, Math.floor((w * h) / 11000));
         for (let i = 0; i < sn; i++) {
           stars.push({
             x: Math.random() * w,
             y: Math.random() * h,
-            r: Math.random() < 0.85 ? 1 : 2,
-            a: 0.12 + Math.random() * 0.3,
+            r: Math.random() < 0.75 ? 1 : 2,
+            a: 0.2 + Math.random() * 0.35,
             phase: Math.random() * Math.PI * 2,
             tw: 0.3 + Math.random() * 0.9,
           });
@@ -176,25 +176,25 @@
       // 樱花花瓣（仅浅色）
       petals = [];
       if (!dark) {
-        const pn = mobile ? 5 : 9;
+        const pn = mobile ? 7 : 12;
         for (let i = 0; i < pn; i++) {
           petals.push({
             x: Math.random() * w,
             y: Math.random() * h,
-            s: 3 + Math.random() * 3,
+            s: 3.5 + Math.random() * 3.5,
             rot: Math.random() * Math.PI * 2,
             vr: (Math.random() - 0.5) * 0.02,
             vy: 0.25 + Math.random() * 0.35,
             phase: Math.random() * Math.PI * 2,
-            a: 0.35 + Math.random() * 0.3,
+            a: 0.45 + Math.random() * 0.3,
           });
         }
       }
     }
 
-    // ====== Konami 星尘爆发 + 斑图播种 ======
-    function konamiBurst() {
-      for (let i = 0; i < 240; i++) {
+    // ====== Konami 星尘爆发 + 斑图播种（n/seeds 可调，主题切换时用小型版） ======
+    function konamiBurst(n = 240, seeds = 8) {
+      for (let i = 0; i < n; i++) {
         const ang = Math.random() * Math.PI * 2;
         const sp = 1.5 + Math.random() * 6;
         bursts.push({
@@ -203,7 +203,7 @@
           life: 1, ci: Math.floor(Math.random() * 3),
         });
       }
-      for (let i = 0; i < 8; i++) rdSeed(); // 斑图同时开花
+      if (dark) for (let i = 0; i < seeds; i++) rdSeed(); // 斑图同时开花
     }
 
     // ====== 尺寸与生命周期 ======
@@ -308,7 +308,14 @@
     const ensureSized = () => {
       if (canvas.clientWidth > 0) { sized = true; resize(); }
     };
-    new MutationObserver(() => { readTheme(); spawn(); if (sized) return; ensureSized(); })
+    // 主题切换瞬间：一小阵星尘涌出，让"天亮/入夜"本身被看见
+    let firstTheme = true;
+    new MutationObserver(() => {
+      readTheme(); spawn();
+      if (firstTheme) { firstTheme = false; return; }
+      if (sized) konamiBurst(50, 3);
+      else ensureSized();
+    })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     new MutationObserver(() => { if (!sized) ensureSized(); })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });

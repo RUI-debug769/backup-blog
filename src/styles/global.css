@@ -53,10 +53,10 @@ html[data-theme="light"] {
   --code-bg: #ece8f7;
   --accent: #6672e8;
   --glow: rgba(102, 114, 232, 0.22);
-  /* 氛围光尘：晨 = 雾紫 / 樱粉 / 朝阳光尘 */
-  --dust-1: #c0b0e4;
-  --dust-2: #e8bcd4;
-  --dust-3: #f0cfa4;
+  /* 氛围光尘：晨 = 雾紫 / 樱粉 / 朝阳光尘（浅色下加深，保证可见） */
+  --dust-1: #a68fd6;
+  --dust-2: #dfa2c2;
+  --dust-3: #e8bd85;
 }
 
 /* ============ 基础 ============ */
@@ -102,8 +102,8 @@ html[data-theme="dark"] body {
 html[data-theme="light"] body {
   background:
     radial-gradient(1200px 600px at 50% -10%, var(--bg-glow) 0%, transparent 60%),
-    radial-gradient(900px 500px at 88% -6%, rgba(240, 207, 164, 0.35), transparent 65%),
-    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 220" preserveAspectRatio="none"><path d="M0,180 C200,120 350,90 520,140 C700,195 850,80 1050,120 C1250,160 1400,110 1600,150 L1600,220 L0,220 Z" fill="rgba(96,86,140,0.055)"/><path d="M0,200 C250,160 420,130 620,170 C820,205 1000,140 1220,165 C1400,185 1500,170 1600,190 L1600,220 L0,220 Z" fill="rgba(60,55,100,0.05)"/></svg>') center bottom / 100% auto no-repeat,
+    radial-gradient(900px 500px at 88% -6%, rgba(240, 207, 164, 0.5), transparent 65%),
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 220" preserveAspectRatio="none"><path d="M0,180 C200,120 350,90 520,140 C700,195 850,80 1050,120 C1250,160 1400,110 1600,150 L1600,220 L0,220 Z" fill="rgba(96,86,140,0.09)"/><path d="M0,200 C250,160 420,130 620,170 C820,205 1000,140 1220,165 C1400,185 1500,170 1600,190 L1600,220 L0,220 Z" fill="rgba(60,55,100,0.08)"/></svg>') center bottom / 100% auto no-repeat,
     var(--bg);
 }
 
@@ -571,12 +571,12 @@ html[data-theme="light"] .footer-figure {
   flex: 1;
 }
 
-/* 备案号：水墨晕染 + 朱砂小印 */
+/* 备案号：水墨晕染 */
 :root {
-  --ink-wash: rgba(28, 28, 46, 0.1);
+  --ink-wash: rgba(28, 28, 46, 0.16);
 }
 html[data-theme="dark"] {
-  --ink-wash: rgba(223, 228, 255, 0.09);
+  --ink-wash: rgba(223, 228, 255, 0.14);
 }
 
 .beian {
@@ -605,9 +605,12 @@ html[data-theme="dark"] {
   transform: scale(1.15);
 }
 
-/* 朱砂小印「不完备」：竖排、微歪，盖章的手感 */
-.beian .seal {
+/* 朱砂小印「不完备」：竖排、微歪——定理旁的落款印（用在 404 的 Gödel 注脚） */
+.seal {
   writing-mode: vertical-rl;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 10px;
   font-family: var(--sans);
   font-size: 9px;
   line-height: 1.15;
@@ -617,13 +620,8 @@ html[data-theme="dark"] {
   color: #f5efe6;
   border-radius: 2px;
   box-shadow: inset 0 0 0 1px rgba(245, 239, 230, 0.35);
-  transform: rotate(-2deg);
+  transform: rotate(-2deg) translateY(2px);
   opacity: 0.9;
-  transition: transform 0.25s ease;
-}
-
-.beian:hover .seal {
-  transform: rotate(0deg);
 }
 
 /* ============ 氛围光尘（Ambient 组件的 canvas） ============ */
