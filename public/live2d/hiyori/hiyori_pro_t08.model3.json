@@ -6,7 +6,8 @@
 			"hiyori_pro_t08.2048/texture_00.png",
 			"hiyori_pro_t08.2048/texture_01.png"
 		],
-		"Physics": "hiyori_pro_t08.physics3.json"
+		"Physics": "hiyori_pro_t08.physics3.json",
+		"Pose": "hiyori_pro_t08.pose3.json"
 	},
 	"Groups": [
 		{
