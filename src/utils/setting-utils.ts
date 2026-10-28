@@ -168,8 +168,9 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE): void {
 export function setTheme(theme: LIGHT_DARK_MODE, origin?: { x: number; y: number }): void {
 	localStorage.setItem("theme", theme);
 
-	// 圆形扩散切换（参考 koharu 的波纹过渡）：支持 View Transitions 且用户未要求
-	// 减少动效时，从点击处圆形扩散；否则直接切换。
+	// 圆形扩散切换（参考 koharu 的波纹过渡）。关键：主题应用必须可靠生效——
+	// View Transition 的回调在无渲染帧/异常时可能不执行，所以带「兜底立即应用」：
+	// 回调内应用一次；若 350ms 内尚未应用，兜底再应用一次（幂等，只生效一次）。
 	const reduceMotion =
 		getMotionPreference() === true ||
 		window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -181,31 +182,44 @@ export function setTheme(theme: LIGHT_DARK_MODE, origin?: { x: number; y: number
 		return;
 	}
 
-	const vt = document.startViewTransition(() => {
+	let applied = false;
+	const applyOnce = () => {
+		if (applied) return;
+		applied = true;
 		applyThemeToDocument(theme);
-	});
-	vt.ready
-		.then(() => {
-			const { x, y } = origin;
-			const radius = Math.hypot(
-				Math.max(x, window.innerWidth - x),
-				Math.max(y, window.innerHeight - y),
-			);
-			document.documentElement.animate(
-				{
-					clipPath: [
-						`circle(0px at ${x}px ${y}px)`,
-						`circle(${radius}px at ${x}px ${y}px)`,
-					],
-				},
-				{
-					duration: 500,
-					easing: "cubic-bezier(0.2, 0, 0, 1)",
-					pseudoElement: "::view-transition-new(root)",
-				},
-			);
-		})
-		.catch(() => {});
+	};
+
+	try {
+		const vt = document.startViewTransition(applyOnce);
+		const fallback = window.setTimeout(applyOnce, 350);
+		vt.ready
+			.then(() => {
+				window.clearTimeout(fallback);
+				const { x, y } = origin;
+				const radius = Math.hypot(
+					Math.max(x, window.innerWidth - x),
+					Math.max(y, window.innerHeight - y),
+				);
+				document.documentElement.animate(
+					{
+						clipPath: [
+							`circle(0px at ${x}px ${y}px)`,
+							`circle(${radius}px at ${x}px ${y}px)`,
+						],
+					},
+					{
+						duration: 500,
+						easing: "cubic-bezier(0.2, 0, 0, 1)",
+						pseudoElement: "::view-transition-new(root)",
+					},
+				);
+			})
+			.catch(() => applyOnce());
+		vt.finished.finally(applyOnce);
+	} catch {
+		// 任何 View Transition 异常都退化为直接应用
+		applyOnce();
+	}
 }
 
 export function getStoredTheme(): LIGHT_DARK_MODE {
