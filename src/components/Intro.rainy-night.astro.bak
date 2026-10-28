@@ -1,0 +1,1079 @@
+---
+//
+// 雨夜终端开场动画 v4（intro overlay）
+// 从单文件原型 intro-prototype/index.html 提取，框架无关：
+// - 双层霓虹城市（JS 确定性生成）+ CRT 终端 + 技术流 boot log
+// - 撕裂故障 + CRT 关机 → 雨中少女剪影（Seedream 抠图蒙版）
+// - 终幕 MUR DOS LOG
+// - sessionStorage 每会话只播一次；#intro 强制重播
+// - prefers-reduced-motion 时直接不播
+// - intro:replay 事件触发重播（保留旧站页脚重播入口的接口）
+// Shirone/Swup 适配：组件挂在 Layout 的 body 直子元素（Swup 容器 main/#toc 之外），
+// 无刷新切页不销毁、不重播；window.__introPlayed 播放期间为 true（供彩蛋 canvas 协调）
+//
+---
+
+{/* 首帧前判定（Shirone/Swup 环境：组件在 Swup 容器外，只初始化一次）：
+    会话首访且未开启 prefers-reduced-motion 才播放，#intro 强制重播 */}
+<script is:inline>
+  (function () {
+    var seen = sessionStorage.getItem("introPlayed") === "1";
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var force = location.hash === "#intro";
+    var play = (!seen || force) && !reduced;
+    var root = document.documentElement;
+    root.classList.add(play ? "intro-on" : "intro-seen");
+    if (reduced) root.classList.add("intro-reduced");
+  })();
+</script>
+
+<div class="intro" id="intro" aria-hidden="true">
+  <!-- 场景层 -->
+  <div class="sky"></div>
+  <div class="city-flash"></div>
+  <svg class="city city--far" id="cityFar" viewBox="0 0 1440 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
+  <div class="rain rain--a"></div>
+  <svg class="city city--near" id="cityNear" viewBox="0 0 1440 500" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
+  <canvas class="particles" id="particleCanvas" aria-hidden="true"></canvas>
+
+  <!-- 雨中少女剪影（Seedream 抠人物 → 墨线双色调 /assets/figure-cut-ink.webp） -->
+  <div class="figure">
+    <img class="figure-img" src="/assets/figure-cut-ink.webp" alt="" draggable="false" />
+  </div>
+
+  <div class="mist"></div>
+  <div class="ground"></div>
+  <div class="rain rain--b"></div>
+  <div class="rain rain--c"></div>
+  <div class="lightning"></div>
+  <div class="vignette"></div>
+
+  <div class="terminal" id="terminal">
+    <div class="terminal__bar">
+      <i></i><i></i><i></i>
+      <span class="terminal__title">amayo — tty1</span>
+    </div>
+    <div class="terminal__body" id="terminalBody"></div>
+  </div>
+
+  <div class="sweep sweep--1"></div>
+  <div class="sweep sweep--2"></div>
+  <div class="sweep sweep--3"></div>
+  <div class="flash"></div>
+
+  <div class="title-card">
+    <h1 class="title-card__main">MUR DOS LOG</h1>
+    <p class="title-card__sub">Intellectual growth should commence at birth and cease only at death.</p>
+    <span class="title-card__hint">— enter —</span>
+  </div>
+
+  <button class="skip" id="skipBtn" type="button" tabindex="-1">SKIP</button>
+</div>
+
+<style>
+  /* ============ 开场遮罩 ============ */
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 9999; /* 必须高于 Shirone 的 #navbar(z-50) 与 #floating-controls(z-45) */
+    background: #080911;
+    opacity: 1;
+    visibility: visible;
+    /* intro 固定深色雨夜，不跟随站点明暗主题；变量自带，不依赖主题 CSS 变量 */
+    --mono: "SF Mono", "JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+    --ink: #dfe4ff;
+    --dim: rgba(178, 188, 230, 0.48);
+    --cyan: #5ce1ff;
+    --magenta: #ff5c8a;
+    --amber: #ffc46b;
+    transition:
+      opacity 0.9s ease,
+      visibility 0s 0s;
+  }
+
+  :global(html.intro-seen) .intro,
+  :global(html.intro-reduced) .intro {
+    display: none;
+  }
+
+  /* 播放期间锁定滚动（:global 才能命中组件外的 html/body） */
+  :global(html.intro-on),
+  :global(html.intro-on body) {
+    overflow: hidden;
+  }
+
+  /* 播放期间隐藏 Shirone 博客控件：顶栏 + 悬浮控制组 */
+  :global(html.intro-on #navbar),
+  :global(html.intro-on #floating-controls) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .intro.is-done {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.9s ease,
+      visibility 0s 0.9s;
+  }
+
+  /* ---- 天空 / 闪电 ---- */
+  .sky {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(900px 340px at 50% 106%, rgba(122, 92, 214, 0.38), transparent 72%),
+      linear-gradient(#0a0b18 0%, #0d0e22 52%, #090a13 100%);
+  }
+  .scene-surge .sky {
+    animation: sky-surge 3.4s ease forwards;
+  }
+  @keyframes sky-surge {
+    0% { filter: brightness(1); }
+    30% { filter: brightness(1.25) saturate(1.25); }
+    100% { filter: brightness(0.82) saturate(1.15); }
+  }
+  .lightning,
+  .city-flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .lightning {
+    background: radial-gradient(1100px 700px at 50% 8%, rgba(200, 214, 255, 0.9), rgba(150, 170, 255, 0.25) 45%, transparent 75%);
+  }
+  .city-flash {
+    background: rgba(170, 190, 255, 1);
+  }
+  .scene-figure .lightning,
+  .scene-figure .city-flash {
+    animation: lightning-flash 5.2s ease-in-out 0.5s both;
+  }
+  @keyframes lightning-flash {
+    0%, 100% { opacity: 0; }
+    11% { opacity: 0.75; }
+    13% { opacity: 0.12; }
+    15% { opacity: 0.5; }
+    19% { opacity: 0; }
+    58% { opacity: 0.42; }
+    60% { opacity: 0; }
+  }
+
+  /* ---- 城市天际线（JS 生成 SVG） ---- */
+  .city {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    pointer-events: none;
+  }
+  .city--far { height: 62%; }
+  .city--near { height: 43%; }
+  .city rect { shape-rendering: crispEdges; }
+
+  /* ---- 粒子流场（canvas，z 序：近景城市之上、人物之下） ---- */
+  .particles {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* ---- 湿地面 + 雾气 ---- */
+  .ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 24%;
+    background:
+      radial-gradient(420px 90px at 26% 0%, rgba(92, 225, 255, 0.16), transparent 70%),
+      radial-gradient(480px 100px at 72% 0%, rgba(255, 92, 138, 0.12), transparent 70%),
+      linear-gradient(to top, #05060d 40%, rgba(5, 6, 13, 0));
+  }
+  .mist {
+    position: absolute;
+    left: -25%;
+    bottom: 6%;
+    width: 150%;
+    height: 32%;
+    background: radial-gradient(ellipse at center, rgba(130, 140, 225, 0.13), transparent 70%);
+    filter: blur(14px);
+    animation: mist-drift 26s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes mist-drift {
+    from { transform: translateX(-3%); }
+    to { transform: translateX(3%); }
+  }
+
+  /* ---- 雨中少女剪影（墨线双色调，颜色烘焙在图内） ---- */
+  .figure {
+    position: absolute;
+    left: 50%;
+    bottom: -2%;
+    height: 82vh;
+    aspect-ratio: 810 / 1017;
+    transform: translateX(-50%) translateY(40px);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .scene-figure .figure {
+    animation: fig-in 1.9s cubic-bezier(0.2, 0.8, 0.25, 1) 0.15s forwards;
+  }
+  @keyframes fig-in {
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  .figure-img {
+    display: block;
+    height: 100%;
+    width: auto;
+    transform-origin: 50% 100%;
+    animation:
+      fig-rim 5.2s ease-in-out 0.5s both,
+      fig-breathe 5.6s ease-in-out infinite;
+  }
+  @keyframes fig-rim {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 3px rgba(139, 155, 255, 0.45)) drop-shadow(0 0 22px rgba(123, 92, 255, 0.25)); }
+    11% { filter: brightness(1.5) drop-shadow(0 0 4px rgba(200, 230, 255, 0.95)) drop-shadow(0 0 34px rgba(120, 160, 255, 0.65)); }
+    15% { filter: brightness(1.08) drop-shadow(0 0 3px rgba(139, 155, 255, 0.5)) drop-shadow(0 0 22px rgba(123, 92, 255, 0.3)); }
+    58% { filter: brightness(1.35) drop-shadow(0 0 4px rgba(200, 230, 255, 0.75)) drop-shadow(0 0 28px rgba(120, 160, 255, 0.45)); }
+  }
+  @keyframes fig-breathe {
+    0%, 100% { transform: scale(1, 1); }
+    50% { transform: scale(1.006, 0.997); }
+  }
+
+  /* ---- 雨（三层，远/中/近） ---- */
+  .rain {
+    position: absolute;
+    inset: -60%;
+    pointer-events: none;
+    will-change: background-position;
+  }
+  .rain--a {
+    transform: rotate(12deg);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 34px, rgba(130, 148, 230, 0.14) 34px 37px, transparent 37px 150px);
+    background-size: 180px 180px;
+    animation: rain-a 0.9s linear infinite;
+  }
+  .rain--b {
+    transform: rotate(13deg);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 26px, rgba(148, 166, 255, 0.26) 26px 29px, transparent 29px 110px);
+    background-size: 130px 130px;
+    animation: rain-b 0.5s linear infinite;
+  }
+  .rain--c {
+    transform: rotate(15deg);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 18px, rgba(180, 198, 255, 0.38) 18px 22px, transparent 22px 78px);
+    background-size: 88px 88px;
+    animation: rain-c 0.36s linear infinite;
+  }
+  @keyframes rain-a { to { background-position: 0 180px; } }
+  @keyframes rain-b { to { background-position: 0 130px; } }
+  @keyframes rain-c { to { background-position: 0 88px; } }
+  .scene-surge .rain--b,
+  .scene-surge .rain--c,
+  .scene-crash .rain--b,
+  .scene-crash .rain--c {
+    animation-duration: 0.22s;
+    opacity: 0.9;
+  }
+  .scene-figure .rain--b,
+  .scene-figure .rain--c {
+    animation-duration: 0.3s;
+  }
+
+  .vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    background: radial-gradient(ellipse at center, transparent 42%, rgba(5, 6, 13, 0.8) 100%);
+  }
+
+  /* ---- CRT 终端 ---- */
+  .terminal {
+    position: absolute;
+    left: 50%;
+    top: 40%;
+    width: min(88vw, 560px);
+    opacity: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(10, 12, 26, 0.82);
+    border: 1px solid rgba(120, 150, 255, 0.18);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.4),
+      0 30px 80px rgba(0, 0, 0, 0.6),
+      0 0 46px rgba(80, 100, 220, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    z-index: 6;
+  }
+  .scene-term .terminal {
+    animation: crt-on 0.55s cubic-bezier(0.2, 0.9, 0.25, 1) forwards;
+  }
+  @keyframes crt-on {
+    0% { opacity: 0; transform: translate(-50%, -50%) scaleY(0.004) scaleX(0.9); filter: brightness(4); }
+    55% { opacity: 1; transform: translate(-50%, -50%) scaleY(0.012) scaleX(1.02); filter: brightness(3); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scaleY(1) scaleX(1); filter: brightness(1); }
+  }
+  .scene-crash .terminal {
+    animation:
+      crash-glitch 0.42s steps(2, end) 0s 5 both,
+      crt-off 0.42s cubic-bezier(0.7, 0, 0.9, 0.3) 0.55s forwards;
+  }
+  @keyframes crash-glitch {
+    0% { transform: translate(-50%, -50%); clip-path: inset(0 0 0 0); }
+    20% { transform: translate(-50%, -50%) translate(-4px, 1px); clip-path: inset(18% 0 54% 0); }
+    40% { transform: translate(-50%, -50%) translate(4px, -2px); clip-path: inset(60% 0 8% 0); }
+    60% { transform: translate(-50%, -50%) translate(-2px, 2px); clip-path: inset(4% 0 72% 0); }
+    80% { transform: translate(-50%, -50%) translate(3px, 0); clip-path: inset(34% 0 40% 0); }
+    100% { transform: translate(-50%, -50%); clip-path: inset(0 0 0 0); }
+  }
+  @keyframes crt-off {
+    0% { opacity: 1; transform: translate(-50%, -50%) scaleY(1) scaleX(1); filter: brightness(1); }
+    40% { opacity: 1; transform: translate(-50%, -50%) scaleY(0.008) scaleX(1.05); filter: brightness(3.4); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scaleY(0.003) scaleX(1.14); filter: brightness(6); }
+  }
+  .scene-crash .terminal__body {
+    text-shadow:
+      1.8px 0 var(--magenta),
+      -1.8px 0 var(--cyan);
+  }
+
+  .terminal__bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(120, 150, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .terminal__bar i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: block;
+  }
+  .terminal__bar i:nth-child(1) { background: #ff5f57; }
+  .terminal__bar i:nth-child(2) { background: #febc2e; }
+  .terminal__bar i:nth-child(3) { background: #28c840; }
+  .terminal__title {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    color: rgba(150, 170, 230, 0.45);
+  }
+  .terminal__body {
+    position: relative;
+    padding: 16px 18px 18px;
+    font-family: var(--mono);
+    font-size: 12.8px;
+    line-height: 1.85;
+    min-height: 214px;
+    color: var(--ink);
+  }
+  .terminal__body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px);
+    animation: scanline-move 7s linear infinite;
+  }
+  .terminal__body::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.35) 100%);
+    animation: crt-flicker 4.2s steps(1) infinite;
+  }
+  @keyframes scanline-move { to { background-position: 0 60px; } }
+  @keyframes crt-flicker {
+    0%, 100% { opacity: 0.9; }
+    48% { opacity: 0.82; }
+    50% { opacity: 1; }
+    52% { opacity: 0.86; }
+  }
+
+  /* ---- 故障扫线 ---- */
+  .sweep {
+    position: absolute;
+    left: -30%;
+    width: 160%;
+    height: 3px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 7;
+  }
+  .sweep--1 { top: 36%; background: var(--cyan); box-shadow: 0 0 24px var(--cyan); }
+  .sweep--2 { top: 52%; background: var(--magenta); box-shadow: 0 0 24px var(--magenta); }
+  .sweep--3 { top: 60%; background: var(--amber); box-shadow: 0 0 24px var(--amber); }
+  .scene-crash .sweep--1 { animation: sweep 0.5s 0.05s linear both; }
+  .scene-crash .sweep--2 { animation: sweep 0.42s 0.16s linear both; }
+  .scene-crash .sweep--3 { animation: sweep 0.55s 0.28s linear both; }
+  @keyframes sweep {
+    0% { transform: translateX(-60%); opacity: 0; }
+    20% { opacity: 0.75; }
+    80% { opacity: 0.75; }
+    100% { transform: translateX(60%); opacity: 0; }
+  }
+
+  /* ---- 白光 ---- */
+  .flash {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 8vmax;
+    height: 8vmax;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #dfe4ff 55%, transparent 75%);
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 8;
+  }
+  .scene-flash .flash {
+    animation: flash 0.85s cubic-bezier(0.65, 0, 0.8, 0.3) forwards;
+  }
+  @keyframes flash {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    25% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(34); opacity: 0; }
+  }
+
+  /* ---- 终幕标题 ---- */
+  .title-card {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 15vh;
+    gap: 12px;
+    opacity: 0;
+    text-align: center;
+    pointer-events: none;
+  }
+  .title-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(ellipse 60% 45% at 50% 32%, rgba(7, 8, 17, 0.72), transparent 75%);
+  }
+  .scene-title .title-card {
+    animation: title-in 1.4s ease 0.2s both;
+  }
+  @keyframes title-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .title-card__main {
+    font-family: var(--mono);
+    font-weight: 300;
+    font-size: clamp(30px, 6.4vw, 68px);
+    letter-spacing: 0.26em;
+    text-indent: 0.26em;
+    color: #f2f4ff;
+    text-shadow:
+      0 0 46px rgba(139, 155, 255, 0.55),
+      0 0 90px rgba(92, 225, 255, 0.25);
+    animation: letter-space 1.8s cubic-bezier(0.25, 0.8, 0.3, 1) 0.35s both;
+    white-space: nowrap;
+  }
+  @keyframes letter-space {
+    from { letter-spacing: 0.62em; text-indent: 0.62em; opacity: 0.2; filter: blur(6px); }
+    to { letter-spacing: 0.26em; text-indent: 0.26em; opacity: 1; filter: blur(0); }
+  }
+  .title-card__sub {
+    margin-top: 8px;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    text-indent: 0.22em;
+    color: var(--dim);
+  }
+  .title-card__hint {
+    margin-top: 4vh;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.3em;
+    color: rgba(160, 172, 225, 0.4);
+    animation: hint-breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes hint-breathe {
+    50% { opacity: 0.35; }
+  }
+
+  /* ---- 跳过 ---- */
+  .skip {
+    position: absolute;
+    right: 26px;
+    top: 22px;
+    z-index: 11;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    color: var(--dim);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    padding: 7px 18px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    transition: all 0.25s ease;
+    opacity: 0;
+  }
+  .intro:not(.is-done) .skip {
+    animation: skip-in 0.6s ease 1s both;
+  }
+  @keyframes skip-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .skip:hover {
+    color: var(--ink);
+    border-color: rgba(255, 255, 255, 0.42);
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  @media (max-width: 600px) {
+    .terminal { top: 40%; width: 92vw; }
+    .terminal__body {
+      font-size: 11px;
+      padding: 13px 13px 15px;
+      min-height: 188px;
+    }
+    .figure { height: 56vh; }
+    .city--far { height: 50%; }
+    .city--near { height: 36%; }
+    .title-card { padding-top: 12vh; }
+    .title-card__sub {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+    }
+    .skip { right: 16px; top: 16px; }
+  }
+</style>
+
+<script>
+  // ====== 确定性随机，保证每次生成的城市一致 ======
+  function mulberry32(seed: number) {
+    return function () {
+      seed |= 0;
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const NS = 'http://www.w3.org/2000/svg';
+  interface CityCfg {
+    seed: number;
+    wMin: number; wMax: number; hMin: number; hMax: number;
+    fill: string; window: string; lit: number; signs: number;
+  }
+  function buildCity(elId: string, cfg: CityCfg) {
+    const el = document.getElementById(elId)!;
+    const rnd = mulberry32(cfg.seed);
+    const rect = (x: number, y: number, w: number, h: number, fill: string) => {
+      const r = document.createElementNS(NS, 'rect');
+      r.setAttribute('x', String(x));
+      r.setAttribute('y', String(y));
+      r.setAttribute('width', String(w));
+      r.setAttribute('height', String(h));
+      r.setAttribute('fill', fill);
+      el.appendChild(r);
+      return r;
+    };
+    let x = -30;
+    while (x < 1480) {
+      const w = cfg.wMin + rnd() * (cfg.wMax - cfg.wMin);
+      const h = cfg.hMin + rnd() * (cfg.hMax - cfg.hMin);
+      rect(x, 500 - h, w, h, cfg.fill);
+      if (rnd() < 0.22) rect(x + w / 2 - 1, 500 - h - 22 - rnd() * 26, 2, 22, cfg.fill);
+      const cols = Math.max(1, Math.floor((w - 16) / 13));
+      const rows = Math.max(1, Math.floor((h - 20) / 17));
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          if (rnd() > cfg.lit) continue;
+          const neon = rnd();
+          const color =
+            neon < 0.06 ? 'rgba(92,225,255,.85)'
+            : neon < 0.1 ? 'rgba(255,92,138,.8)'
+            : cfg.window;
+          const win = rect(x + 8 + c * 13, 500 - h + 10 + r * 17, 5, 7, color);
+          if (rnd() < 0.12) {
+            win.setAttribute('class', 'intro-win-flicker');
+            win.style.animationDuration = (3 + rnd() * 5).toFixed(2) + 's';
+            win.style.animationDelay = (-rnd() * 6).toFixed(2) + 's';
+          }
+        }
+      }
+      if (rnd() < cfg.signs) {
+        const color = rnd() < 0.5 ? 'rgba(92,225,255,.9)' : 'rgba(255,92,138,.85)';
+        const sign = rect(
+          x + 8 + rnd() * (w - 22),
+          500 - h + 26 + rnd() * 30,
+          Math.min(18, w - 16),
+          4,
+          color,
+        );
+        sign.setAttribute('class', 'intro-win-flicker');
+        sign.style.animationDuration = (2.6 + rnd() * 3).toFixed(2) + 's';
+        sign.style.animationDelay = (-rnd() * 5).toFixed(2) + 's';
+      }
+      x += w + 4 + rnd() * 10;
+    }
+  }
+  // 城市 SVG 惰性生成：仅在 intro 实际播放时构建（seen 访客零生成开销）
+  let citiesBuilt = false;
+  function ensureCity() {
+    if (citiesBuilt) return;
+    citiesBuilt = true;
+    buildCity('cityFar', {
+      seed: 20261017, wMin: 64, wMax: 120, hMin: 120, hMax: 280,
+      fill: '#151732', window: 'rgba(150,170,255,.4)', lit: 0.42, signs: 0.18,
+    });
+    buildCity('cityNear', {
+      seed: 778899, wMin: 90, wMax: 160, hMin: 150, hMax: 330,
+      fill: '#080a15', window: 'rgba(160,180,255,.3)', lit: 0.3, signs: 0.3,
+    });
+  }
+
+  // JS 动态创建元素的样式（Astro scoped CSS 覆盖不到，走注入 <style>）
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+    .intro-win-flicker { animation-name: intro-win-flicker; animation-timing-function: steps(1); animation-iteration-count: infinite; }
+    @keyframes intro-win-flicker {
+      0%, 90%, 100% { opacity: 1; }
+      91% { opacity: .15; } 93% { opacity: 1; } 96% { opacity: .4; }
+    }
+    .intro-logline, .intro-ln { white-space: pre; opacity: 0; }
+    .intro-logline.show, .intro-ln.show { animation: intro-log-in .18s ease-out both; }
+    @keyframes intro-log-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .intro-logline .t { color: rgba(150, 166, 220, .42); }
+    .intro-logline .ok { color: #6ee7a8; }
+    .intro-logline .warn { color: #ffc46b; }
+    .intro-ln .prompt { color: #8b9bff; }
+    .intro-ln .output { color: #5ce1ff; text-shadow: 0 0 12px rgba(92, 225, 255, .55); }
+    .intro-caret {
+      display: inline-block; width: .62em; background: #dfe4ff;
+      color: transparent; animation: intro-caret-blink 1s steps(1) infinite;
+    }
+    @keyframes intro-caret-blink { 50% { opacity: 0; } }
+  `;
+  document.head.appendChild(styleEl);
+
+  // ====== 粒子流场（DeepSeek 式波带 + 环境微尘 + 终端爆裂） ======
+  const PF = {
+    canvas: document.getElementById('particleCanvas') as HTMLCanvasElement,
+    ctx: null as CanvasRenderingContext2D | null,
+    w: 0, h: 0, dpr: 1,
+    parts: [] as any[], bursts: [] as any[], sprites: [] as HTMLCanvasElement[],
+    t: 0, last: 0, intensity: 0.15, target: 0.15, rise: 0,
+    mouse: { x: -9999, y: -9999 }, smx: -9999, smy: -9999,
+    pulseX: -999, paused: false,
+    frameAvg: 16, degraded: false
+  };
+  const PF_COLORS = [[92, 225, 255], [139, 155, 255], [224, 236, 255], [123, 92, 255]];
+  const PF_WEIGHTS = [0.5, 0.3, 0.17, 0.03]; // 冰蓝主导 + 白闪 + 极少紫罗兰
+  function pfPickColor() {
+    const r = Math.random();
+    let acc = 0;
+    for (let i = 0; i < PF_WEIGHTS.length; i++) { acc += PF_WEIGHTS[i]; if (r < acc) return i; }
+    return 0;
+  }
+
+  function pfSprite(rgb: number[]) {
+    const s = document.createElement('canvas');
+    s.width = s.height = 32;
+    const c = s.getContext('2d')!;
+    const g = c.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.9)`);
+    g.addColorStop(0.35, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.35)`);
+    g.addColorStop(1, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+    c.fillStyle = g;
+    c.fillRect(0, 0, 32, 32);
+    return s;
+  }
+
+  function pfResize() {
+    PF.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    PF.w = PF.canvas.clientWidth; PF.h = PF.canvas.clientHeight;
+    PF.canvas.width = PF.w * PF.dpr;
+    PF.canvas.height = PF.h * PF.dpr;
+    PF.ctx!.setTransform(PF.dpr, 0, 0, PF.dpr, 0, 0);
+  }
+
+  function pfSpawn() {
+    PF.parts.length = 0;
+    const mobile = PF.w < 640;
+    const bandDef = [
+      { y: 0.60, amp: 26, speed: 0.50, n: mobile ? 260 : 700 },
+      { y: 0.68, amp: 34, speed: 0.34, n: mobile ? 210 : 560 },
+      { y: 0.76, amp: 42, speed: 0.22, n: mobile ? 160 : 420 }
+    ];
+    for (const b of bandDef) {
+      for (let i = 0; i < b.n; i++) {
+        PF.parts.push({
+          kind: 'band',
+          x: Math.random() * (PF.w + 200) - 100,
+          baseY: b.y * PF.h + (Math.random() - 0.5) * 26,
+          amp: b.amp * (0.7 + Math.random() * 0.6),
+          wspeed: b.speed * (0.8 + Math.random() * 0.4),
+          phase: Math.random() * Math.PI * 2,
+          z: 0.35 + Math.random() * 0.65,
+          ci: pfPickColor(),
+          a: 0.25 + Math.random() * 0.55,
+          yOff: 0
+        });
+      }
+    }
+    const dust = mobile ? 120 : 350;
+    for (let i = 0; i < dust; i++) {
+      PF.parts.push({
+        kind: 'dust',
+        x: Math.random() * PF.w,
+        baseY: Math.random() * PF.h,
+        amp: 8 + Math.random() * 18,
+        wspeed: 0.1 + Math.random() * 0.25,
+        phase: Math.random() * Math.PI * 2,
+        z: 0.25 + Math.random() * 0.75,
+        ci: pfPickColor(),
+        a: 0.08 + Math.random() * 0.22,
+        yOff: 0
+      });
+    }
+  }
+
+  function pfBurst(cx: number, cy: number, n = 260) {
+    for (let i = 0; i < n; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const sp = 1.2 + Math.random() * 4.5;
+      PF.bursts.push({
+        x: cx + (Math.random() - 0.5) * 220,
+        y: cy + (Math.random() - 0.5) * 90,
+        vx: Math.cos(ang) * sp,
+        vy: Math.sin(ang) * sp - 1.2,
+        life: 1, decay: 0.006 + Math.random() * 0.012,
+        ci: pfPickColor(),
+        size: 2 + Math.random() * 5
+      });
+    }
+  }
+
+  function pfDrawLinks(ctx: CanvasRenderingContext2D, w: number, h: number) {
+    const CELL = 95, LINK = 88, LINK2 = LINK * LINK;
+    const cols = Math.ceil((w + CELL) / CELL), rows = Math.ceil((h + CELL) / CELL);
+    const grid: any[][] = new Array(cols * rows);
+    for (const p of PF.parts) {
+      if (p._a < 0.03) continue;
+      const cx = Math.max(0, Math.min(cols - 1, (p._x / CELL) | 0));
+      const cy = Math.max(0, Math.min(rows - 1, (p._y / CELL) | 0));
+      (grid[cy * cols + cx] || (grid[cy * cols + cx] = [])).push(p);
+    }
+    const mx = PF.smx, my = PF.smy;
+    ctx.lineWidth = 0.6;
+    ctx.strokeStyle = 'rgb(96, 190, 255)';
+    for (let cy = 0; cy < rows; cy++) {
+      for (let cx = 0; cx < cols; cx++) {
+        const cell = grid[cy * cols + cx];
+        if (!cell) continue;
+        const near = [
+          grid[cy * cols + cx + 1],
+          grid[(cy + 1) * cols + cx - 1],
+          grid[(cy + 1) * cols + cx],
+          grid[(cy + 1) * cols + cx + 1]
+        ];
+        for (const p of cell) {
+          for (const arr of [cell, ...near]) {
+            if (!arr) continue;
+            for (const q of arr) {
+              if (q._i <= p._i) continue;
+              const dx = p._x - q._x, dy = p._y - q._y, d2 = dx * dx + dy * dy;
+              if (d2 > LINK2) continue;
+              const d = Math.sqrt(d2);
+              let a = (1 - d / LINK) * 0.34 * PF.intensity * Math.min(p._a + q._a, 1);
+              const mdx = (p._x + q._x) / 2 - mx, mdy = (p._y + q._y) / 2 - my;
+              const md2 = mdx * mdx + mdy * mdy;
+              if (md2 < 48400) a *= 1 + (1 - Math.sqrt(md2) / 220) * 2.2;
+              if (a < 0.015) continue;
+              ctx.globalAlpha = Math.min(a, 0.85);
+              ctx.beginPath();
+              ctx.moveTo(p._x, p._y);
+              ctx.lineTo(q._x, q._y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function pfTick(now: number) {
+    if (document.hidden || PF.paused) { PF.last = now; pfRaf = requestAnimationFrame(pfTick); return; }
+    const dt = Math.min((now - PF.last) / 16.67, 3) || 1;
+    PF.frameAvg = PF.frameAvg * 0.95 + (now - PF.last) * 0.05;
+    if (!PF.degraded && PF.frameAvg > 26 && PF.parts.length > 400) {
+      PF.degraded = true;
+      PF.parts.length = Math.floor(PF.parts.length / 2);
+    }
+    PF.last = now;
+    PF.t += dt * 0.016;
+    PF.intensity += (PF.target - PF.intensity) * 0.03 * dt;
+
+    const ctx = PF.ctx!;
+    const { w, h } = PF;
+    // 拖尾：destination-out 渐隐上一帧，保持画布透明
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'lighter';
+
+    // 鼠标位置平滑跟随
+    PF.smx += (PF.mouse.x - PF.smx) * 0.12 * dt;
+    PF.smy += (PF.mouse.y - PF.smy) * 0.12 * dt;
+    // 能量脉冲沿波带周期扫过
+    PF.pulseX = ((PF.t * 140) % (w + 480)) - 240;
+
+    const VR = 190, VR2 = VR * VR;
+    let idx = 0;
+    for (const p of PF.parts) {
+      p.x -= (p.kind === 'band' ? p.wspeed * 1.6 : 0.22 * p.z) * dt;
+      if (p.x < -120) p.x = w + 110;
+      if (PF.rise) p.yOff -= 0.5 * p.z * dt;
+      let y = p.baseY + Math.sin(p.x * 0.006 + PF.t * p.wspeed * 6 + p.phase) * p.amp * p.z
+            + Math.sin(PF.t * 0.8 + p.phase * 2.3) * 3 + p.yOff;
+
+      // 鼠标引力漩涡：切向绕转 + 弱内吸（带速度累积与阻尼）
+      const dx = p.x - PF.smx, dy = y - PF.smy, d2 = dx * dx + dy * dy;
+      if (d2 < VR2) {
+        const d = Math.sqrt(d2) || 1;
+        const f = (1 - d / VR) * 0.9 * dt;
+        p.ix = (p.ix || 0) + ((-dy / d) * 6 + (-dx / d) * 1.2) * f;
+        p.iy = (p.iy || 0) + ((dx / d) * 6 + (-dy / d) * 1.2) * f;
+      }
+      p.ix = (p.ix || 0) * (1 - 0.06 * dt);
+      p.iy = (p.iy || 0) * (1 - 0.06 * dt);
+      const x = p.x + p.ix;
+      y += p.iy;
+
+      const pulse = Math.max(0, 1 - Math.abs(x - PF.pulseX) / 90);
+      const tw = 0.75 + 0.25 * Math.sin(PF.t * 2.2 + p.phase * 5);
+      const alpha = Math.min(p.a * tw * PF.intensity * (1 + pulse * 1.1), 1);
+      p._i = idx++; p._x = x; p._y = y; p._a = alpha;
+      ctx.globalAlpha = alpha;
+      const s = (p.kind === 'band' ? 5.5 : 4) * p.z;
+      ctx.drawImage(PF.sprites[p.ci], x - s, y - s, s * 2, s * 2);
+    }
+
+    // 星座连线（空间网格，鼠标附近增亮）
+    pfDrawLinks(ctx, w, h);
+
+    for (let i = PF.bursts.length - 1; i >= 0; i--) {
+      const b = PF.bursts[i];
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      b.vx *= 0.985; b.vy = b.vy * 0.985 + 0.02 * dt;
+      b.life -= b.decay * dt;
+      if (b.life <= 0) { PF.bursts.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.min(b.life, 0.9) * PF.intensity * 1.4;
+      const s = b.size;
+      ctx.drawImage(PF.sprites[b.ci], b.x - s, b.y - s, s * 2, s * 2);
+    }
+    ctx.globalAlpha = 1;
+    pfRaf = requestAnimationFrame(pfTick);
+  }
+
+  // 粒子系统惰性初始化：只有 intro 实际播放（html.intro-on 且非 reduced-motion）才启动。
+  // seen 访客的不可见画布上不再空转 60fps / O(n^2) 连线。
+  let pfInited = false;
+  let pfRunning = false;
+  let pfRaf = 0;
+  function onPfResize() { pfResize(); pfSpawn(); }
+  function onPfPointerMove(e: PointerEvent) { PF.mouse.x = e.clientX; PF.mouse.y = e.clientY; }
+  function onPfPointerLeave() { PF.mouse.x = -9999; PF.mouse.y = -9999; }
+  function initPF() {
+    if (pfInited) return;
+    pfInited = true;
+    PF.ctx = PF.canvas.getContext('2d');
+    PF.sprites = PF_COLORS.map(pfSprite);
+    pfResize();
+    pfSpawn();
+  }
+  function startPF() {
+    initPF();
+    window.addEventListener('resize', onPfResize);
+    window.addEventListener('pointermove', onPfPointerMove);
+    window.addEventListener('pointerleave', onPfPointerLeave);
+    if (pfRunning) return;
+    pfRunning = true;
+    pfRaf = requestAnimationFrame(t => { PF.last = t; pfTick(t); });
+  }
+  function stopPF() {
+    pfRunning = false;
+    cancelAnimationFrame(pfRaf);
+    window.removeEventListener('resize', onPfResize);
+    window.removeEventListener('pointermove', onPfPointerMove);
+    window.removeEventListener('pointerleave', onPfPointerLeave);
+  }
+
+  // ====== 启动日志（技术流 boot log，intro 固定英文） ======
+  const BOOT = [
+    { t: '[ 0.000000]', text: 'Linux amayo 6.6.6-rainy x86_64' },
+    { ok: '[  OK  ]', text: 'mounting /dev/phenomenal-experience' },
+    { ok: '[  OK  ]', text: 'starting qualia daemon' },
+    { ok: '[  OK  ]', text: 'calibrating redness of red ... done' },
+    { warn: '[ WARN ]', text: 'self not found in /proc' },
+  ];
+  const TITLE_HOLD = 2800; // 终幕停留时长
+
+  const rootEl = document.documentElement;
+  const intro = document.getElementById('intro')!;
+  const body = document.getElementById('terminalBody')!;
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  let runId = 0;
+
+  function logLine(parts: { cls?: string; text: string }[]) {
+    const div = document.createElement('div');
+    div.className = 'intro-logline';
+    div.innerHTML = parts
+      .map((p) => `<span class="${p.cls || ''}">${p.text}</span>`)
+      .join('');
+    body.appendChild(div);
+    requestAnimationFrame(() => div.classList.add('show'));
+    return div;
+  }
+
+  async function typeInto(el: HTMLElement, text: string, speed = 52) {
+    for (const ch of text) {
+      el.textContent += ch;
+      await wait(speed + Math.random() * 30);
+    }
+  }
+
+  async function play() {
+    const token = ++runId;
+    window.__introPlayed = true;
+    body.innerHTML = '';
+    intro.className = 'intro';
+    rootEl.classList.remove('intro-seen', 'intro-finished');
+    rootEl.classList.add('intro-on');
+    ensureCity();
+    if (!rootEl.classList.contains('intro-reduced')) startPF();
+    PF.target = 0.15; PF.rise = 0; PF.bursts.length = 0;
+    PF.paused = false;
+    if (PF.ctx) { PF.ctx.save(); PF.ctx.globalCompositeOperation = 'source-over'; PF.ctx.clearRect(0, 0, PF.w, PF.h); PF.ctx.restore(); }
+
+    // 幕 0：雨夜城市建立
+    await wait(2300);
+    if (token !== runId) return;
+
+    // 幕 1：CRT 终端开机
+    intro.classList.add('scene-term');
+    await wait(900);
+    if (token !== runId) return;
+
+    for (const line of BOOT) {
+      if (line.t) logLine([{ cls: 't', text: line.t + ' ' }, { text: line.text }]);
+      if (line.ok) logLine([{ cls: 'ok', text: line.ok + ' ' }, { text: line.text }]);
+      if (line.warn) logLine([{ cls: 'warn', text: line.warn + ' ' }, { text: line.text }]);
+      await wait(190 + Math.random() * 120);
+      if (token !== runId) return;
+    }
+    await wait(260);
+    if (token !== runId) return;
+
+    // $ whoami 逐字输入
+    const cmd = document.createElement('div');
+    cmd.className = 'intro-ln';
+    cmd.innerHTML =
+      '<span class="prompt">$ </span><span class="cmd-text"></span><span class="intro-caret">_</span>';
+    body.appendChild(cmd);
+    requestAnimationFrame(() => cmd.classList.add('show'));
+    await wait(160);
+    await typeInto(cmd.querySelector('.cmd-text') as HTMLElement, 'whoami');
+    if (token !== runId) return;
+    await wait(360);
+
+    const out = document.createElement('div');
+    out.className = 'intro-ln';
+    out.innerHTML = '<span class="output">amayo</span>';
+    body.appendChild(out);
+    requestAnimationFrame(() => out.classList.add('show'));
+    cmd.querySelector('.intro-caret')!.remove();
+    await wait(1200);
+    if (token !== runId) return;
+
+    // 幕 2：雨势变大，终端撕裂 + 关机，少女浮现
+    intro.classList.add('scene-surge');
+    await wait(500);
+    if (token !== runId) return;
+    intro.classList.add('scene-crash');
+    {
+      const r = document.getElementById('terminal')!.getBoundingClientRect();
+      pfBurst(r.left + r.width / 2, r.top + r.height / 2);
+      PF.target = 0.75;
+    }
+    await wait(650);
+    if (token !== runId) return;
+    intro.classList.add('scene-figure');
+    PF.target = 1;
+    await wait(3000);
+    if (token !== runId) return;
+
+    // 幕 3：白光，标题
+    intro.classList.add('scene-flash');
+    await wait(750);
+    if (token !== runId) return;
+    intro.classList.add('scene-title');
+    PF.rise = 1; PF.target = 0.85;
+    await wait(TITLE_HOLD);
+    if (token !== runId) return;
+    finish();
+  }
+
+  function finish() {
+    runId++;
+    window.__introPlayed = false;
+    intro.classList.add('is-done');
+    rootEl.classList.remove('intro-on');
+    rootEl.classList.add('intro-finished');
+    sessionStorage.setItem('introPlayed', '1');
+    PF.paused = true;
+    if (pfInited) stopPF();
+  }
+
+  document.getElementById('skipBtn')!.addEventListener('click', finish);
+
+  // 按键跳过：Esc / Enter / Space（播放期间页面无其他可交互元素）
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' && e.key !== 'Enter' && e.key !== ' ') return;
+    if (!rootEl.classList.contains('intro-on') || intro.classList.contains('is-done')) return;
+    e.preventDefault();
+    finish();
+  });
+
+  document.addEventListener('intro:replay', () => {
+    sessionStorage.removeItem('introPlayed');
+    play();
+  });
+
+  if (
+    rootEl.classList.contains('intro-on') &&
+    !rootEl.classList.contains('intro-reduced')
+  ) {
+    requestAnimationFrame(play);
+  }
+</script>

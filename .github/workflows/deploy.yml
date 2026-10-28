@@ -1,0 +1,47 @@
+name: Deploy blog to ECS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Astro site
+        run: pnpm build
+
+      - name: Add ECS host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H -p 22 ${{ secrets.ECS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy dist/ to ECS via rsync
+        uses: burnett01/rsync-deployments@5.2
+        with:
+          switches: -avzr --delete --chown=www-data:www-data
+          path: dist/
+          remote_path: /var/www/blog/
+          remote_host: ${{ secrets.ECS_HOST }}
+          remote_user: ${{ secrets.ECS_USER }}
+          remote_key: ${{ secrets.ECS_SSH_KEY }}
