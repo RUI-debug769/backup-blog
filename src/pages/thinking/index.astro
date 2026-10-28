@@ -65,13 +65,13 @@ const schoolMeta: Record<string, { philosophy: string; action: string }> = {
 const total = notes.length;
 ---
 
-<MainGridLayout title="03 Thinking 思维方法论" description="50 位思想者：什么是学习？怎么学习？" page="thinking">
+<MainGridLayout title="03 Thinking" description="50 thinkers on one question: What is learning? How to learn?" page="thinking">
 	<section class="thinking-intro">
-		<h1 class="thinking-title">03 Thinking — 思维方法论</h1>
+		<h1 class="thinking-title">03 Thinking</h1>
 		<p class="thinking-lead">
-			不同思想家的视角，讨论同一个问题：<strong>什么是学习？怎么学习？</strong>
+			Different thinkers, one question: <strong>What is learning? How to learn?</strong>
 		</p>
-		<p class="thinking-meta">50 位思想者 × 2 篇 · 共 {total} 篇 · 每位：「什么是学习」给镜片，「怎么学习」给动作</p>
+		<p class="thinking-meta">50 thinkers × 2 essays · {total} in total · “What is learning” gives the lens, “How to learn” gives the motion</p>
 	</section>
 
 	<section class="thinking-schools">
@@ -95,9 +95,9 @@ const total = notes.length;
 								<li>
 									<span class="thinking-who">{p.who}</span>
 									<span class="thinking-links">
-										{p.what && <a href={`/thinking/${encodeURIComponent(p.what.id)}/`}>什么是</a>}
+										{p.what && <a href={`/thinking/${encodeURIComponent(p.what.id)}/`}>What</a>}
 										{p.what && p.how && <span class="thinking-dot">·</span>}
-										{p.how && <a href={`/thinking/${encodeURIComponent(p.how.id)}/`}>怎么</a>}
+										{p.how && <a href={`/thinking/${encodeURIComponent(p.how.id)}/`}>How</a>}
 									</span>
 								</li>
 							))}

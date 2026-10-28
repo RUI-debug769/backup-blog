@@ -69,7 +69,7 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		pageKey: "books",
 	},
 	Thinking: {
-		name: "思考",
+		name: "Thinking",
 		url: "/thinking/",
 		icon: "material-symbols:psychology-outline-rounded",
 		pageKey: "thinking",

@@ -20,10 +20,11 @@ const { title, school, voice, source, published } = entry.data;
 
 // 同人物另一篇（什么是 ↔ 怎么）
 const m = entry.id.match(/^(.*?)-(什么是学习|怎么学习)$/);
-let sibling: { id: string; label: string } | null = null;
+let sibling: { id: string; label: string; labelEn: string } | null = null;
 if (m) {
 	const other = m[2] === "什么是学习" ? "怎么学习" : "什么是学习";
-	sibling = { id: `${m[1]}-${other}`, label: other };
+	const labelEn = other === "什么是学习" ? "What is learning" : "How to learn";
+	sibling = { id: `${m[1]}-${other}`, label: other, labelEn };
 }
 const dateStr = published
 	? new Date(published).toISOString().slice(0, 10)
@@ -40,8 +41,8 @@ const dateStr = published
 			</div>
 			{(voice || source) && (
 				<p class="thinking-article__note">
-					{voice === "reconstructed-first-person" && "本文第一人称叙事为视角重构，非本人原话。"}
-					{source && <span>来源：{source}</span>}
+					{voice === "reconstructed-first-person" && "First-person narrative is a reconstructed perspective, not the author’s own words."}
+					{source && <span>Source: {source}</span>}
 				</p>
 			)}
 		</header>
@@ -51,10 +52,10 @@ const dateStr = published
 		</Markdown>
 
 		<footer class="thinking-article__foot">
-			<a href="/thinking/" class="thinking-back">← 返回思考专栏</a>
+			<a href="/thinking/" class="thinking-back">← All essays</a>
 			{sibling && (
 				<a href={`/thinking/${encodeURIComponent(sibling.id)}/`} class="thinking-sibling">
-					另一篇：{sibling.label} →
+					Also: {sibling.labelEn} →
 				</a>
 			)}
 		</footer>
