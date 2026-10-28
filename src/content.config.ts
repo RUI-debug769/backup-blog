@@ -90,9 +90,24 @@ const momentsCollection = defineCollection({
 	}),
 });
 
+const thinkingCollection = defineCollection({
+	loader: glob({ base: "./src/content/thinking", pattern: "**/*.md" }),
+	schema: z.object({
+		title: z.string(),
+		published: z.date(),
+		description: z.string().optional().default(""),
+		tags: z.array(z.string()).optional().default([]),
+		school: z.string().optional().default(""),
+		voice: z.string().optional().default(""),
+		source: z.string().optional().default(""),
+		lang: z.string().optional().default(""),
+	}),
+});
+
 export const collections = {
 	posts: postsCollection,
 	spec: specCollection,
 	series: seriesCollection,
 	moments: momentsCollection,
+	thinking: thinkingCollection,
 } as const;

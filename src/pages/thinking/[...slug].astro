@@ -1,0 +1,75 @@
+---
+/**
+ * 思考专栏详情页：渲染单篇「X-什么是学习 / X-怎么学习」。
+ */
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import Markdown from "@components/content/Markdown.astro";
+import { getCollection, render } from "astro:content";
+
+export async function getStaticPaths() {
+	const notes = await getCollection("thinking");
+	return notes.map((entry) => ({
+		params: { slug: entry.id },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, school, voice, source, published } = entry.data;
+
+// 同人物另一篇（什么是 ↔ 怎么）
+const m = entry.id.match(/^(.*?)-(什么是学习|怎么学习)$/);
+let sibling: { id: string; label: string } | null = null;
+if (m) {
+	const other = m[2] === "什么是学习" ? "怎么学习" : "什么是学习";
+	sibling = { id: `${m[1]}-${other}`, label: other };
+}
+const dateStr = published
+	? new Date(published).toISOString().slice(0, 10)
+	: "";
+---
+
+<MainGridLayout title={title} description={`${title} — 03 Thinking`} page="thinking">
+	<article class="thinking-article">
+		<header class="thinking-article__head">
+			<h1>{title}</h1>
+			<div class="thinking-article__meta">
+				{school && <span class="thinking-badge">{school}</span>}
+				{dateStr && <time>{dateStr}</time>}
+			</div>
+			{(voice || source) && (
+				<p class="thinking-article__note">
+					{voice === "reconstructed-first-person" && "本文第一人称叙事为视角重构，非本人原话。"}
+					{source && <span>来源：{source}</span>}
+				</p>
+			)}
+		</header>
+
+		<Markdown class="thinking-article__body">
+			<Content />
+		</Markdown>
+
+		<footer class="thinking-article__foot">
+			<a href="/thinking/" class="thinking-back">← 返回思考专栏</a>
+			{sibling && (
+				<a href={`/thinking/${encodeURIComponent(sibling.id)}/`} class="thinking-sibling">
+					另一篇：{sibling.label} →
+				</a>
+			)}
+		</footer>
+	</article>
+</MainGridLayout>
+
+<style>
+	.thinking-article { max-width: 46rem; }
+	.thinking-article__head { margin-bottom: 1.5rem; }
+	.thinking-article__head h1 { font: var(--m3e-type-headline-medium); margin: 0 0 0.75rem; line-height: 1.3; }
+	.thinking-article__meta { display: flex; align-items: center; gap: 0.75rem; font: var(--m3e-type-label-medium); color: var(--on-surface-variant); }
+	.thinking-badge { padding: 0.15rem 0.6rem; border-radius: var(--shape-corner-full); background: var(--secondary-container); color: var(--on-secondary-container); }
+	.thinking-article__note { margin: 0.75rem 0 0; font: var(--m3e-type-body-small); color: var(--on-surface-variant); opacity: 0.75; display: flex; flex-direction: column; gap: 0.2rem; }
+	.thinking-article__body { margin-bottom: 2rem; }
+	.thinking-article__foot { display: flex; justify-content: space-between; gap: 1rem; padding-top: 1.25rem; border-top: 1px solid color-mix(in oklab, var(--on-surface) 12%, transparent); font: var(--m3e-type-label-large); }
+	.thinking-article__foot a { color: var(--primary); text-decoration: none; }
+	.thinking-article__foot a:hover { text-decoration: underline; }
+</style>
