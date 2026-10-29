@@ -6,6 +6,7 @@ import MainGridLayout from "@layouts/MainGridLayout.astro";
 import Markdown from "@components/content/Markdown.astro";
 import { getCollection, render } from "astro:content";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
+import "../../styles/report-warm.css";
 
 export async function getStaticPaths() {
 	const reports = await getCollection("reports");
@@ -31,7 +32,7 @@ const dateStr = formatDateToYYYYMMDD(published);
 ---
 
 <MainGridLayout title={title} description={`${title} — Frontier ${kind}`} page="reports">
-	<article class="report-article">
+	<article class="report-article report-warm">
 		<header class="report-article__head">
 			<h1>{title}</h1>
 			<div class="report-article__meta">
