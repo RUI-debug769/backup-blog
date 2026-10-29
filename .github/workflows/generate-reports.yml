@@ -1,0 +1,62 @@
+name: Generate AI Reports
+
+on:
+  schedule:
+    # 北京时间 08:00 每日日报 / 08:30 每周六周报（UTC 00:00 / 00:30）
+    - cron: "0 0 * * *"
+    - cron: "30 0 * * 6"
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "daily 或 weekly"
+        required: true
+        default: "daily"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-reports
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Decide kind
+        id: kind
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            K="${{ github.event.inputs.kind }}"
+          elif [ "${{ github.event.schedule }}" = "30 0 * * 6" ]; then
+            K="weekly"
+          else
+            K="daily"
+          fi
+          echo "kind=$K" >> "$GITHUB_OUTPUT"
+
+      - name: Generate report
+        env:
+          ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
+          ARK_ENDPOINT_ID: ${{ secrets.ARK_ENDPOINT_ID }}
+        run: node scripts/generate-report.mjs "${{ steps.kind.outputs.kind }}"
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "murdo-report-bot"
+          git config user.email "2640403264@qq.com"
+          git add src/content/reports
+          if git diff --cached --quiet; then
+            echo "no new report"
+            exit 0
+          fi
+          git commit -m "report: ${{ steps.kind.outputs.kind }} $(date -u +%Y-%m-%d)"
+          git push
