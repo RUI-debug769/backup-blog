@@ -20,6 +20,10 @@ SECTION_TITLES = {
 }
 HACK_ITEMS_MAX = 6
 
+# companies 的 group 契约是「基础层/技术层/应用层」；模型偶尔会交错输出，
+# 这里按固定顺序稳定排序，使同一 group 的条目相邻（内容与顺序内相对关系不变）。
+_GROUP_ORDER = {"基础层": 0, "技术层": 1, "应用层": 2}
+
 
 class DailyReportError(Exception):
     """日报链路可预期错误。"""
@@ -91,8 +95,10 @@ def _validate_section(obj, idx):
     if not isinstance(items, list) or len(items) > cap:
         raise DailyReportError("sections[%d].items 必须为 0-%d 条数组" % (idx, cap))
     item_validator = _validate_hack_item if is_hack else _validate_item
-    return {"id": sid,
-            "items": [item_validator(it, j) for j, it in enumerate(items)]}
+    norm = [item_validator(it, j) for j, it in enumerate(items)]
+    if sid == "companies":
+        norm.sort(key=lambda it: _GROUP_ORDER.get(it["group"], len(_GROUP_ORDER)))
+    return {"id": sid, "items": norm}
 
 
 def _validate_deep(obj, idx):
