@@ -44,6 +44,12 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		icon: "material-symbols:archive-outline-rounded",
 		pageKey: "archive",
 	},
+	Reports: {
+		name: "日报",
+		url: "/reports/",
+		icon: "material-symbols:schedule-outline-rounded",
+		pageKey: "reports",
+	},
 	Friends: {
 		name: i18n(I18nKey.friends),
 		url: "/friends/",
@@ -161,6 +167,7 @@ const defaultNavBarConfig: NavBarConfig = {
 	links: [
 		LinkPresets.Home,
 		LinkPresets.Archive,
+		LinkPresets.Reports,
 		LinkPresets.Moments,
 		LinkPresets.Anime,
 		LinkPresets.Books,

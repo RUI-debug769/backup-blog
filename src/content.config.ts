@@ -104,10 +104,29 @@ const thinkingCollection = defineCollection({
 	}),
 });
 
+/**
+ * 前沿日报/周报专栏：内容由 scripts/sync-reports.mjs 从 frontier-report 项目同步，
+ * 文件名 daily-YYYY-MM-DD.md / weekly-YYYY-MM-DD.md，category 区分「前沿日报 / 前沿周报」。
+ */
+const reportsCollection = defineCollection({
+	loader: glob({ base: "./src/content/reports", pattern: "**/*.md" }),
+	schema: z.object({
+		title: z.string(),
+		published: z.date(),
+		description: z.string().optional().default(""),
+		tags: z.array(z.string()).optional().default([]),
+		category: z.string().optional().default(""),
+		lang: z.string().optional().default(""),
+		draft: z.boolean().optional().default(false),
+		image: z.string().optional().default(""),
+	}),
+});
+
 export const collections = {
 	posts: postsCollection,
 	spec: specCollection,
 	series: seriesCollection,
 	moments: momentsCollection,
 	thinking: thinkingCollection,
+	reports: reportsCollection,
 } as const;

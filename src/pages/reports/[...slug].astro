@@ -1,0 +1,65 @@
+---
+/**
+ * 前沿日报/周报详情页：渲染单篇同步来的报告正文。
+ */
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import Markdown from "@components/content/Markdown.astro";
+import { getCollection, render } from "astro:content";
+import { formatDateToYYYYMMDD } from "@utils/date-utils";
+
+export async function getStaticPaths() {
+	const reports = await getCollection("reports");
+	return reports
+		.filter((entry) => !entry.data.draft)
+		.map((entry) => ({
+			params: { slug: entry.id },
+			props: { entry },
+		}));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, published, category, tags } = entry.data;
+
+/** 类型徽标：category / tags 含「周报」或文件名含 weekly → 周报，否则日报 */
+const isWeekly =
+	category.includes("周报") ||
+	tags.some((t) => t.includes("周报")) ||
+	entry.id.includes("weekly");
+const kind = isWeekly ? "周报" : "日报";
+const dateStr = formatDateToYYYYMMDD(published);
+---
+
+<MainGridLayout title={title} description={`${title} — 前沿${kind}`} page="reports">
+	<article class="report-article">
+		<header class="report-article__head">
+			<h1>{title}</h1>
+			<div class="report-article__meta">
+				<span class={`report-badge report-badge--${isWeekly ? "weekly" : "daily"}`}>{kind}</span>
+				<time datetime={dateStr}>{dateStr}</time>
+			</div>
+		</header>
+
+		<Markdown class="report-article__body">
+			<Content />
+		</Markdown>
+
+		<footer class="report-article__foot">
+			<a href="/reports/" class="report-back">← 全部报告</a>
+		</footer>
+	</article>
+</MainGridLayout>
+
+<style>
+	.report-article { max-width: 46rem; }
+	.report-article__head { margin-bottom: 1.5rem; }
+	.report-article__head h1 { font: var(--m3e-type-headline-medium); margin: 0 0 0.75rem; line-height: 1.3; }
+	.report-article__meta { display: flex; align-items: center; gap: 0.75rem; font: var(--m3e-type-label-medium); color: var(--on-surface-variant); }
+	.report-badge { padding: 0.15rem 0.6rem; border-radius: var(--shape-corner-full); }
+	.report-badge--daily { background: var(--secondary-container); color: var(--on-secondary-container); }
+	.report-badge--weekly { background: var(--tertiary-container); color: var(--on-tertiary-container); }
+	.report-article__body { margin-bottom: 2rem; }
+	.report-article__foot { display: flex; justify-content: space-between; gap: 1rem; padding-top: 1.25rem; border-top: 1px solid color-mix(in oklab, var(--on-surface) 12%, transparent); font: var(--m3e-type-label-large); }
+	.report-article__foot a { color: var(--primary); text-decoration: none; }
+	.report-article__foot a:hover { text-decoration: underline; }
+</style>

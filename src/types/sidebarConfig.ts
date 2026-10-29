@@ -30,6 +30,7 @@ export type SidebarPage =
 	| "notFound" // 404 页面
 	| "home" // 首页（[...page].astro 及其分页）
 	| "archive" // 归档
+	| "reports" // 前沿日报/周报专栏
 	| "friends" // 友链
 	| "moments" // 动态
 	| "anime" // 番剧收藏
