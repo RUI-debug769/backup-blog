@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write   # 推送后触发部署（GITHUB_TOKEN 的推送不会自动触发其它工作流）
 
 concurrency:
   group: generate-reports
@@ -56,14 +57,24 @@ jobs:
         run: python3 scripts/ai_report/run.py "${{ steps.kind.outputs.kind }}"
 
       - name: Commit and push if changed
+        id: commit
         run: |
           git config user.name "murdo-report-bot"
           git config user.email "2640403264@qq.com"
           git add src/content/reports src/data/reports
           if git diff --cached --quiet; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
             echo "no new report"
             exit 0
           fi
           git commit -m "report: ${{ steps.kind.outputs.kind }} $(date -u +%Y-%m-%d)"
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
           git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      # GITHUB_TOKEN 推送的提交不会触发 push 类工作流，显式派发一次部署
+      - name: Trigger site deploy
+        if: steps.commit.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref "${GITHUB_REF_NAME}"
