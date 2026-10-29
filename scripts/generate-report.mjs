@@ -77,6 +77,23 @@ async function fetchFeed(url, limit = 8) {
   }
 }
 
+async function fetchHackathons() {
+  try {
+    const res = await fetch(
+      "https://devpost.com/api/hackathons?order_by=deadline&status[]=open&per_page=8",
+      { headers: { "User-Agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(25000) }
+    );
+    if (!res.ok) return [];
+    const d = await res.json();
+    return (d.hackathons || []).map((h) => ({
+      title: h.title,
+      url: h.url,
+      dates: h.submission_period_dates,
+      location: h.displayed_location?.location || "",
+    }));
+  } catch { return []; }
+}
+
 async function callArk(prompt) {
   const key = process.env.ARK_API_KEY;
   const ep = process.env.ARK_ENDPOINT_ID;
@@ -100,7 +117,7 @@ async function callArk(prompt) {
   return d.choices[0].message.content.trim();
 }
 
-function buildPromptDaily(news) {
+function buildPromptDaily(news, hacks) {
   return `今天是 ${today}。下面是今天从境外与国内 AI 相关 RSS 抓取到的真实新闻条目（标题 + 摘要 + 链接）：
 
 ${news}
@@ -113,6 +130,9 @@ ${news}
 （可按 基础层/技术层/应用层 分）
 ## 三、重大事件
 ## 四、政策与监管
+## 五、赛事机会
+近期开放报名的黑客松/竞赛（来自 Devpost，最多 4 条；每条写 比赛名 · 地点 · 时间 · 链接，无则写暂无）：
+${hacks || "（Devpost 未返回数据）"}
 要求：只写材料中出现的公司和人物；每条尽量以「」或链接标注来源；不确定的写「据报，未证实」；不要编造未出现的新闻。直接输出 Markdown 正文，不要前后缀。`;
 }
 
@@ -169,7 +189,10 @@ async function main() {
   if (all.length < 5) { console.log(`daily: 抓到的新闻太少（${all.length}），跳过`); return; }
   console.log(`daily: 抓取 ${all.length} 条新闻，调用模型整理…`);
 
-  const md = await callArk(buildPromptDaily(all.slice(0, 80).join("\n")));
+  const hacks = (await fetchHackathons())
+    .map((h) => `- ${h.title} · ${h.location} · ${h.dates} · ${h.url}`)
+    .join("\n");
+  const md = await callArk(buildPromptDaily(all.slice(0, 80).join("\n"), hacks));
   writeFileSync(out, `---\ntitle: "AI Frontier Daily · ${today}"\npublished: ${today}\ncategory: "Daily"\ntags: ["Daily", "AI"]\nlang: "zh-CN"\n---\n\n${md}\n`, "utf8");
   console.log("daily written:", out);
 }
