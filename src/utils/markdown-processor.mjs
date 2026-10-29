@@ -38,6 +38,7 @@ import { remarkIncludes } from "../plugins/markdown/remark-includes.mjs";
 import { remarkMarker } from "../plugins/markdown/remark-marker.mjs";
 import { remarkOptionGroups } from "../plugins/markdown/remark-option-groups.mjs";
 import { remarkYouTube } from "../plugins/markdown/remark-youtube.mjs";
+import { remarkWikilink } from "../plugins/markdown/remark-wikilink.mjs";
 import { AcFunComponent } from "../plugins/rehype-component-acfun.mjs";
 import { AdmonitionComponent } from "../plugins/rehype-component-admonition.mjs";
 import { ArtPlayerComponent } from "../plugins/rehype-component-artplayer.mjs";
@@ -71,6 +72,7 @@ const fieldI18nKeys = {
 export const siteRemarkPlugins = [
 	remarkEscapeNumericColons,
 	remarkIncludes,
+	remarkWikilink,
 	remarkContentAnnotations,
 	remarkAbbreviations,
 	remarkAdmonitions,

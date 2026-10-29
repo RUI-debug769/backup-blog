@@ -5,6 +5,7 @@ import IconButton from "@components/atoms/action/IconButton.svelte";
 import AccentBar from "@components/atoms/display/AccentBar.svelte";
 import Card from "@components/atoms/display/Card.svelte";
 import Markdown from "@components/content/Markdown.astro";
+import BacklinksPanel from "@components/molecules/BacklinksPanel.astro";
 import ImageWrapper from "@components/molecules/ImageWrapper.astro";
 import LastUpdatedNotice from "@components/molecules/LastUpdatedNotice.astro";
 import License from "@components/molecules/License.astro";
@@ -21,6 +22,7 @@ import Icon from "@iconify/svelte";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { discoverArticles } from "@utils/article-discovery";
 import { resolveAsset } from "@utils/asset-utils";
+import { getWikiConnections } from "@utils/wiki-links";
 import { getPublishedInstant, getUpdatedInstant } from "@utils/content-date";
 import {
 	getSeriesCatalog,
@@ -146,6 +148,7 @@ const seriesCardVisible =
 	series !== null &&
 	!(isEncrypted && entry.data.hideHomeContent);
 const scope = `post:${entry.id}`;
+const { backlinks: wikiBacklinks, outlinks: wikiOutlinks } = await getWikiConnections(entry.id);
 
 const { Content, headings, remarkPluginFrontmatter } = await render(entry);
 const renderedMarkdownSyntaxes = remarkPluginFrontmatter.markdownSyntaxes;
@@ -341,6 +344,8 @@ const jsonLd = {
 					class="mb-6 rounded-xl onload-animation"
 				/>
 			)}
+
+			<BacklinksPanel backlinks={wikiBacklinks} outlinks={wikiOutlinks} class="onload-animation" />
 
 			<ArticleDiscovery
 				related={discovery.related}

@@ -68,6 +68,12 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		icon: "material-symbols:menu-book-outline-rounded",
 		pageKey: "books",
 	},
+	Wiki: {
+		name: "Wiki",
+		url: "/wiki/",
+		icon: "material-symbols:hub-outline-rounded",
+		pageKey: "wiki",
+	},
 	Thinking: {
 		name: "Thinking",
 		url: "/thinking/",
@@ -159,6 +165,7 @@ const defaultNavBarConfig: NavBarConfig = {
 		LinkPresets.Anime,
 		LinkPresets.Books,
 		LinkPresets.Thinking,
+		LinkPresets.Wiki,
 		LinkPresets.Albums,
 		LinkPresets.Friends,
 		LinkPresets.Projects,

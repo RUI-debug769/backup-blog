@@ -4,7 +4,9 @@
  */
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import Markdown from "@components/content/Markdown.astro";
+import BacklinksPanel from "@components/molecules/BacklinksPanel.astro";
 import { getCollection, render } from "astro:content";
+import { getWikiConnections } from "@utils/wiki-links";
 
 export async function getStaticPaths() {
 	const notes = await getCollection("thinking");
@@ -17,6 +19,7 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, school, voice, source, published } = entry.data;
+const { backlinks, outlinks } = await getWikiConnections(entry.id);
 
 // 同人物另一篇（什么是 ↔ 怎么）
 const m = entry.id.match(/^(.*?)-(什么是学习|怎么学习)$/);
@@ -50,6 +53,8 @@ const dateStr = published
 		<Markdown class="thinking-article__body">
 			<Content />
 		</Markdown>
+
+		<BacklinksPanel {backlinks} {outlinks} />
 
 		<footer class="thinking-article__foot">
 			<a href="/thinking/" class="thinking-back">← All essays</a>
