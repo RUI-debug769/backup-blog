@@ -79,29 +79,51 @@ if (footerConfig.enable) {
 </div>
 
 <script>
-  // GoatCounter 访问统计：记录访问 + 页脚显示总访问/访客
+  // GoatCounter 访问统计：上报访问 + 页脚显示总访问/访客
   (function () {
-    if ((window as any).__gcInit) return;
-    (window as any).__gcInit = true;
+    var w = window;
+    if (w.__gcInit) return;
+    w.__gcInit = true;
+
     var s = document.createElement("script");
     s.async = true;
     s.src = "//gc.zgo.at/count.js";
     s.setAttribute("data-goatcounter", "https://murdo.goatcounter.com/count");
     document.head.appendChild(s);
-    function fill() {
-      fetch("https://murdo.goatcounter.com/counter/TOTAL.json", { credentials: "omit" })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) {
-          if (!d) return;
-          var pv = document.getElementById("busuanzi_value_site_pv");
-          var uv = document.getElementById("busuanzi_value_site_uv");
-          if (pv && d.count != null) pv.textContent = d.count;
-          if (uv && d.count_unique != null) uv.textContent = d.count_unique;
-        })
-        .catch(function () {});
+
+    // 页脚在桌面/移动两套布局里各渲染一次，id 重复，所以填充全部同名节点
+    function setAll(id, val) {
+      if (val == null) return;
+      var nodes = document.querySelectorAll("[id=" + id + "]");
+      for (var i = 0; i < nodes.length; i++) nodes[i].textContent = val;
     }
-    if (document.readyState === "complete") fill();
-    else window.addEventListener("load", fill);
+
+    // GoatCounter 对没有记录的路径返回 404，但响应体仍是同样的 JSON，所以不判 r.ok
+    function getJson(url) {
+      return fetch(url, { credentials: "omit" })
+        .then(function (r) { return r.json(); })
+        .catch(function () { return null; });
+    }
+
+    function fill() {
+      getJson("https://murdo.goatcounter.com/counter/TOTAL.json").then(function (d) {
+        if (!d) return;
+        setAll("busuanzi_value_site_pv", d.count);
+        setAll("busuanzi_value_site_uv", d.count_unique);
+      });
+      // 当前页阅读数（文章页才有该节点）
+      var path = location.pathname.replace(/\/+$/, "") || "/";
+      getJson("https://murdo.goatcounter.com/counter/" + encodeURIComponent(path) + ".json").then(function (d) {
+        if (!d) return;
+        setAll("busuanzi_value_page_pv", d.count);
+      });
+    }
+
+    // 不依赖 window.load（Live2D/封面等外部资源挂起时 load 可能长期不触发）
+    fill();
+    document.addEventListener("DOMContentLoaded", fill, { once: true });
+    window.addEventListener("load", fill, { once: true });
+    setTimeout(fill, 1200);
     document.addEventListener("swup:page:view", fill);
   })();
 </script>
