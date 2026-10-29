@@ -70,7 +70,7 @@ export const LinkPresets: Record<string, NavBarLink> = {
 	},
 	Wiki: {
 		name: "Wiki",
-		url: "/wiki/",
+		url: "/graph/",
 		icon: "material-symbols:hub-outline-rounded",
 		pageKey: "wiki",
 	},

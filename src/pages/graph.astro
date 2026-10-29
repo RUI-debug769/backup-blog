@@ -25,7 +25,7 @@ const data = { nodes, edges, broken: graph.broken.length };
 <MainGridLayout title="Wiki Graph" description="双链关系图：文章之间的引用网络" page="graph">
 	<section class="graph-head">
 		<h1>Wiki Graph</h1>
-		<p class="graph-meta">
+		<p class="graph-meta"><a href="/wiki/" style="color:var(--primary);text-decoration:none">→ 目录 / Index</a>　
 			{nodes.length} pages · {edges.length} links · {data.broken} broken
 			<span class="graph-legend"><i class="dot dot--thinking"></i>thinking <i class="dot dot--post"></i>posts</span>
 		</p>
