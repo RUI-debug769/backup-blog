@@ -39,21 +39,27 @@
   .footer-custom a:hover { border-bottom-color: currentColor; }
   .footer-custom__powered { opacity: 0.75; font-size: 0.7rem; }
 </style>
-<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script data-goatcounter="https://GOATCOUNTER_CODE.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <script>
-  // Swup 无刷新切页后重新加载不蒜子，保证文章页阅读量随之更新
+  // GoatCounter 访问统计显示（注册后把 GOATCOUNTER_CODE 换成你的子域名前缀）
   (function () {
-    if (window.__busuanziSwupBound) return;
-    window.__busuanziSwupBound = true;
-    function reloadBusuanzi() {
-      var old = document.querySelector('script[data-busuanzi-reload]');
-      if (old) old.remove();
-      var s = document.createElement('script');
-      s.src = '//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js?' + Date.now();
-      s.async = true;
-      s.setAttribute('data-busuanzi-reload', '1');
-      document.body.appendChild(s);
+    var CODE = "GOATCOUNTER_CODE";
+    if (CODE === "GOATCOUNTER_CODE") return; // 未配置子域名时静默，不报错
+    function fill() {
+      fetch("https://" + CODE + ".goatcounter.com/api/v0/stats/total", { credentials: "omit" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          var pv = document.getElementById("busuanzi_value_site_pv");
+          var uv = document.getElementById("busuanzi_value_site_uv");
+          if (pv && d.count_total != null) pv.textContent = d.count_total;
+          if (uv && d.count_unique != null) uv.textContent = d.count_unique;
+        })
+        .catch(function () {});
     }
-    document.addEventListener('swup:page:view', reloadBusuanzi);
+    if (document.readyState === "complete") fill();
+    else window.addEventListener("load", fill);
+    document.addEventListener("swup:page:view", fill);
   })();
 </script>
+
