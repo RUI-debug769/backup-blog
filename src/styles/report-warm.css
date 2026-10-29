@@ -136,3 +136,22 @@
   .report-warm { padding: 18px 16px; border-radius: 12px; }
   .report-warm h1 { font-size: 1.25rem; }
 }
+
+/* 云端生成的完整暖陶面板（scripts/ai_report）*/
+/* 外层 #211E1B + 640 主面板 #26221F，与邮件 panel_page 完全一致；
+   面板内部全部为内联样式，邮件与博客共用同一份 HTML。 */
+.rw-shell {
+  background: var(--rw-outer);
+  border-radius: 16px;
+  padding: 24px 12px;
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+.rw-panel {
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--rw-panel);
+  border-radius: 16px;
+  padding: 30px 30px 26px;
+}
+.rw-panel a { color: var(--rw-gold); text-decoration: none; }
+.rw-panel a:hover { text-decoration: underline; }

@@ -1,12 +1,20 @@
 ---
 /**
- * 前沿日报/周报详情页：渲染单篇同步来的报告正文。
+ * 前沿日报/周报详情页：直接嵌入云端生成的暖陶面板 HTML（与原邮件版逐像素一致）。
+ * HTML 由 scripts/ai_report/run.py 写入 src/data/reports/<id>.html；
+ * 没有 HTML 时退回渲染 .md 正文。
  */
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import Markdown from "@components/content/Markdown.astro";
 import { getCollection, render } from "astro:content";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import "../../styles/report-warm.css";
+
+const rawHtml = import.meta.glob("/src/data/reports/*.html", {
+	query: "?raw",
+	import: "default",
+	eager: true,
+}) as Record<string, string>;
 
 export async function getStaticPaths() {
 	const reports = await getCollection("reports");
@@ -29,6 +37,7 @@ const isWeekly =
 	entry.id.includes("weekly");
 const kind = isWeekly ? "Weekly" : "Daily";
 const dateStr = formatDateToYYYYMMDD(published);
+const innerHtml = rawHtml[`/src/data/reports/${entry.id}.html`];
 ---
 
 <MainGridLayout title={title} description={`${title} — Frontier ${kind}`} page="reports">
@@ -41,9 +50,17 @@ const dateStr = formatDateToYYYYMMDD(published);
 			</div>
 		</header>
 
-		<Markdown class="report-article__body">
-			<Content />
-		</Markdown>
+		{
+			innerHtml ? (
+				<div class="rw-shell">
+					<div class="rw-panel" set:html={innerHtml} />
+				</div>
+			) : (
+				<Markdown class="report-article__body">
+					<Content />
+				</Markdown>
+			)
+		}
 
 		<footer class="report-article__foot">
 			<a href="/reports/" class="report-back">← All reports</a>
@@ -60,7 +77,7 @@ const dateStr = formatDateToYYYYMMDD(published);
 	.report-badge--daily { background: var(--secondary-container); color: var(--on-secondary-container); }
 	.report-badge--weekly { background: var(--tertiary-container); color: var(--on-tertiary-container); }
 	.report-article__body { margin-bottom: 2rem; }
-	.report-article__foot { display: flex; justify-content: space-between; gap: 1rem; padding-top: 1.25rem; border-top: 1px solid color-mix(in oklab, var(--on-surface) 12%, transparent); font: var(--m3e-type-label-large); }
+	.report-article__foot { display: flex; justify-content: space-between; gap: 1rem; padding-top: 1.25rem; margin-top: 2rem; border-top: 1px solid color-mix(in oklab, var(--on-surface) 12%, transparent); font: var(--m3e-type-label-large); }
 	.report-article__foot a { color: var(--primary); text-decoration: none; }
 	.report-article__foot a:hover { text-decoration: underline; }
 </style>

@@ -22,14 +22,15 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: 22
+          python-version: "3.12"
 
       - name: Decide kind
         id: kind
@@ -43,28 +44,26 @@ jobs:
           fi
           echo "kind=$K" >> "$GITHUB_OUTPUT"
 
-      - name: Generate report
+      - name: Generate report and send email
         env:
-          ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
-          ARK_ENDPOINT_ID: ${{ secrets.ARK_ENDPOINT_ID }}
-        run: node scripts/generate-report.mjs "${{ steps.kind.outputs.kind }}"
-
-      - name: Send report email
-        if: steps.kind.outputs.kind == 'daily'
-        env:
-          QQ_SMTP_USER: ${{ secrets.QQ_SMTP_USER }}
-          QQ_SMTP_PASS: ${{ secrets.QQ_SMTP_PASS }}
-          QQ_SMTP_TO: ${{ secrets.QQ_SMTP_TO }}
-        run: python3 scripts/send-report-email.py "${{ steps.kind.outputs.kind }}"
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL || 'deepseek-v4-pro' }}
+          SMTP_HOST: smtp.qq.com
+          SMTP_PORT: "465"
+          SMTP_USER: ${{ secrets.QQ_SMTP_USER }}
+          SMTP_PASS: ${{ secrets.QQ_SMTP_PASS }}
+          REPORT_TO_EMAIL: ${{ secrets.QQ_SMTP_TO }}
+        run: python3 scripts/ai_report/run.py "${{ steps.kind.outputs.kind }}"
 
       - name: Commit and push if changed
         run: |
           git config user.name "murdo-report-bot"
           git config user.email "2640403264@qq.com"
-          git add src/content/reports
+          git add src/content/reports src/data/reports
           if git diff --cached --quiet; then
             echo "no new report"
             exit 0
           fi
           git commit -m "report: ${{ steps.kind.outputs.kind }} $(date -u +%Y-%m-%d)"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
           git push
