@@ -77,3 +77,31 @@ if (footerConfig.enable) {
 
 	<CommutDiagram />
 </div>
+
+<script>
+  // GoatCounter 访问统计：记录访问 + 页脚显示总访问/访客
+  (function () {
+    if ((window as any).__gcInit) return;
+    (window as any).__gcInit = true;
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "//gc.zgo.at/count.js";
+    s.setAttribute("data-goatcounter", "https://murdo.goatcounter.com/count");
+    document.head.appendChild(s);
+    function fill() {
+      fetch("https://murdo.goatcounter.com/counter/TOTAL.json", { credentials: "omit" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          var pv = document.getElementById("busuanzi_value_site_pv");
+          var uv = document.getElementById("busuanzi_value_site_uv");
+          if (pv && d.count != null) pv.textContent = d.count;
+          if (uv && d.count_unique != null) uv.textContent = d.count_unique;
+        })
+        .catch(function () {});
+    }
+    if (document.readyState === "complete") fill();
+    else window.addEventListener("load", fill);
+    document.addEventListener("swup:page:view", fill);
+  })();
+</script>
