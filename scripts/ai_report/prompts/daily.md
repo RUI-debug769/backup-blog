@@ -13,6 +13,17 @@ AI 行业动态，并核查近期仍可报名的 AI 黑客松赛事，产出一�
 - 写到的每条事实都应能对应到某条检索结果；不得用「据行业日报」这类转述替代
   一手来源；检索不到就按「无更新」处理（对应 section 的 items 给空数组）。
 
+## 零之一、命名规则（本仓库补充，硬约束）
+
+- 外国人名一律保留拉丁原文：Elon Musk、Sam Altman、Geoffrey Hinton、Mark Zuckerberg、
+  Dario Amodei、Jensen Huang 式的写法，不音译、不写成「埃隆·马斯克」「杰弗里·辛顿」。引语、转述与括注同样适用。
+- 本人以中文名行世、且中文名就是其通行称呼的（如黄仁勋、李飞飞、梁文锋、杨植麟）照常写中文名。
+- 外国公司与机构一律保留原文：NVIDIA、AMD、Microsoft、Alphabet、Google DeepMind、
+  Oracle、TSMC、Broadcom、Samsung、SK Hynix、Tesla、Apple，不写成英伟达、微软、
+  甲骨文、台积电、博通、三星、海力士、特斯拉、苹果。
+- 中国公司与机构照常用中文名：字节跳动、智谱、月之暗面、MiniMax、科大讯飞、蚂蚁集团。
+- 产品名、模型名、论文标题同样保留原文（GPT-6.1 Terra、Genie 4、Vera Rubin）。
+
 ## 一、追踪范围（五个维度）
 
 1. **领军人物动态**
