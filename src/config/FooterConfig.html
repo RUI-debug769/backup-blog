@@ -39,20 +39,20 @@
   .footer-custom a:hover { border-bottom-color: currentColor; }
   .footer-custom__powered { opacity: 0.75; font-size: 0.7rem; }
 </style>
-<script data-goatcounter="https://GOATCOUNTER_CODE.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script data-goatcounter="https://murdo.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <script>
-  // GoatCounter 访问统计显示（注册后把 GOATCOUNTER_CODE 换成你的子域名前缀）
+  // GoatCounter 访问统计显示（注册后把 murdo 换成你的子域名前缀）
   (function () {
-    var CODE = "GOATCOUNTER_CODE";
-    if (CODE === "GOATCOUNTER_CODE") return; // 未配置子域名时静默，不报错
+    var CODE = "murdo";
+    if (!CODE) return; // 未配置时静默
     function fill() {
-      fetch("https://" + CODE + ".goatcounter.com/api/v0/stats/total", { credentials: "omit" })
+      fetch("https://" + CODE + ".goatcounter.com/counter/TOTAL.json", { credentials: "omit" })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
           if (!d) return;
           var pv = document.getElementById("busuanzi_value_site_pv");
           var uv = document.getElementById("busuanzi_value_site_uv");
-          if (pv && d.count_total != null) pv.textContent = d.count_total;
+          if (pv && d.count != null) pv.textContent = d.count;
           if (uv && d.count_unique != null) uv.textContent = d.count_unique;
         })
         .catch(function () {});
