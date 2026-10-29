@@ -13,6 +13,7 @@
 import { writeFileSync, existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { fetchCnHackathons } from "./fetch-cn-hackathons.mjs";
 
 const BLOG_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const REPORTS_DIR = join(BLOG_ROOT, "src", "content", "reports");
@@ -138,7 +139,7 @@ ${news}
 ## 三、重大事件
 ## 四、政策与监管
 ## 五、赛事机会
-近期开放报名的黑客松/竞赛（来自 Devpost，最多 4 条；每条写 比赛名 · 地点 · 时间 · 链接，无则写暂无）：
+近期开放报名的黑客松/竞赛（含赛氪中国赛事与 Devpost 国际赛事，按报名截止日升序、最多 6 条；每条写 比赛名 · 地点 · 时间 · 链接，无则写暂无）：
 ${hacks || "（Devpost 未返回数据）"}
 要求：只写材料中出现的公司和人物；每条尽量以「」或链接标注来源；不确定的写「据报，未证实」；不要编造未出现的新闻。直接输出 Markdown 正文，不要前后缀。`;
 }
@@ -196,8 +197,9 @@ async function main() {
   if (all.length < 5) { console.log(`daily: 抓到的新闻太少（${all.length}），跳过`); return; }
   console.log(`daily: 抓取 ${all.length} 条新闻，调用模型整理…`);
 
-  const hacks = (await fetchHackathons())
-    .map((h) => `- ${h.title} · ${h.location} · ${h.dates} · ${h.url}`)
+  const [dpHacks, cnHacks] = await Promise.all([fetchHackathons(), fetchCnHackathons()]);
+  const hacks = [...cnHacks, ...dpHacks]
+    .map((h) => `- ${h.title} · ${h.location || "线上"} · ${h.dates || ""} · ${h.url}`)
     .join("\n");
   const md = await callArk(buildPromptDaily(all.slice(0, 80).join("\n"), hacks));
   writeFileSync(out, `---\ntitle: "AI Frontier Daily · ${today}"\npublished: ${today}\ncategory: "Daily"\ntags: ["Daily", "AI"]\nlang: "zh-CN"\n---\n\n${md}\n`, "utf8");
