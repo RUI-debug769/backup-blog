@@ -13,35 +13,35 @@ const reports = (await getCollection("reports"))
 
 type ReportEntry = (typeof reports)[number];
 
-/** 类型徽标：category / tags 含「周报」或文件名含 weekly → 周报，否则日报 */
-function reportKind(entry: ReportEntry): "日报" | "周报" {
-	if (entry.data.category.includes("周报")) return "周报";
-	if (entry.data.tags.some((t) => t.includes("周报"))) return "周报";
-	if (entry.id.includes("weekly")) return "周报";
-	return "日报";
+/** 类型徽标：category / tags 含 weekly/周报，或文件名含 weekly → Weekly，否则 Daily */
+function reportKind(entry: ReportEntry): "Daily" | "Weekly" {
+	if (/weekly|周报/i.test(entry.data.category)) return "Weekly";
+	if (entry.data.tags.some((t) => /weekly|周报/i.test(t))) return "Weekly";
+	if (entry.id.includes("weekly")) return "Weekly";
+	return "Daily";
 }
 
-const weeklyCount = reports.filter((r) => reportKind(r) === "周报").length;
+const weeklyCount = reports.filter((r) => reportKind(r) === "Weekly").length;
 ---
 
-<MainGridLayout title="前沿日报" description="AI 前沿日报与周报存档" page="reports">
+<MainGridLayout title="Reports" description="AI frontier daily and weekly report archive" page="reports">
 	<section class="reports-intro">
-		<h1 class="reports-title">前沿日报</h1>
-		<p class="reports-lead">AI 前沿动态：每天一份日报，每周末一份周报。</p>
+		<h1 class="reports-title">Reports</h1>
+		<p class="reports-lead">Daily AI frontier briefs, with a weekly recap every weekend.</p>
 		<p class="reports-meta">
-			{reports.length} 篇 · {reports.length - weeklyCount} 日报 / {weeklyCount} 周报 · 由 frontier-report 同步
+			{reports.length} reports · {reports.length - weeklyCount} daily / {weeklyCount} weekly · synced by frontier-report
 		</p>
 	</section>
 
 	<section class="reports-list">
-		{reports.length === 0 && <p class="reports-empty">暂无内容，等待首次同步。</p>}
+		{reports.length === 0 && <p class="reports-empty">No reports yet — waiting for the first sync.</p>}
 		{
 			reports.map((r) => {
 				const kind = reportKind(r);
 				const dateStr = formatDateToYYYYMMDD(r.data.published);
 				return (
 					<a class="reports-item" href={`/reports/${encodeURIComponent(r.id)}/`}>
-						<span class={`reports-badge reports-badge--${kind === "周报" ? "weekly" : "daily"}`}>{kind}</span>
+						<span class={`reports-badge reports-badge--${kind === "Weekly" ? "weekly" : "daily"}`}>{kind}</span>
 						<span class="reports-item__main">
 							<span class="reports-item__title">{r.data.title}</span>
 							{r.data.description && <span class="reports-item__desc">{r.data.description}</span>}

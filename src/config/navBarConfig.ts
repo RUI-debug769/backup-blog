@@ -45,7 +45,7 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		pageKey: "archive",
 	},
 	Reports: {
-		name: "日报",
+		name: "Reports",
 		url: "/reports/",
 		icon: "material-symbols:schedule-outline-rounded",
 		pageKey: "reports",

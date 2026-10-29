@@ -40,17 +40,17 @@ const KINDS = [
 		subdir: join("daily-report", "archives"),
 		pattern: /^ai-daily-report-(\d{4}-\d{2}-\d{2})\.md$/,
 		targetPrefix: "daily-",
-		title: (d) => `AI 前沿日报 · ${d}`,
-		category: "前沿日报",
-		tags: ["前沿日报", "AI"],
+		title: (d) => `AI Frontier Daily · ${d}`,
+		category: "Daily",
+		tags: ["Daily", "AI"],
 	},
 	{
 		subdir: join("weekly-report", "archives"),
 		pattern: /^ai-weekly-ideas-(\d{4}-\d{2}-\d{2})\.md$/,
 		targetPrefix: "weekly-",
-		title: (d) => `AI 前沿周报 · ${d}`,
-		category: "前沿周报",
-		tags: ["前沿周报", "AI"],
+		title: (d) => `AI Frontier Weekly · ${d}`,
+		category: "Weekly",
+		tags: ["Weekly", "AI"],
 	},
 ];
 

@@ -21,16 +21,16 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const { title, published, category, tags } = entry.data;
 
-/** 类型徽标：category / tags 含「周报」或文件名含 weekly → 周报，否则日报 */
+/** 类型徽标：category / tags 含 weekly/周报，或文件名含 weekly → Weekly，否则 Daily */
 const isWeekly =
-	category.includes("周报") ||
-	tags.some((t) => t.includes("周报")) ||
+	/weekly|周报/i.test(category) ||
+	tags.some((t) => /weekly|周报/i.test(t)) ||
 	entry.id.includes("weekly");
-const kind = isWeekly ? "周报" : "日报";
+const kind = isWeekly ? "Weekly" : "Daily";
 const dateStr = formatDateToYYYYMMDD(published);
 ---
 
-<MainGridLayout title={title} description={`${title} — 前沿${kind}`} page="reports">
+<MainGridLayout title={title} description={`${title} — Frontier ${kind}`} page="reports">
 	<article class="report-article">
 		<header class="report-article__head">
 			<h1>{title}</h1>
@@ -45,7 +45,7 @@ const dateStr = formatDateToYYYYMMDD(published);
 		</Markdown>
 
 		<footer class="report-article__foot">
-			<a href="/reports/" class="report-back">← 全部报告</a>
+			<a href="/reports/" class="report-back">← All reports</a>
 		</footer>
 	</article>
 </MainGridLayout>
