@@ -94,7 +94,7 @@ def main():
 
     msg = MIMEText(md_to_email_html(title, body_md), "html", "utf-8")
     msg["Subject"] = Header(title, "utf-8")
-    msg["From"] = Header(f"MUR DOS LOG <{user}>", "utf-8")
+    msg["From"] = user  # QQ 邮箱要求 From 为纯地址，显示名带空格会触发 550
     msg["To"] = to
 
     ctx = ssl.create_default_context()
