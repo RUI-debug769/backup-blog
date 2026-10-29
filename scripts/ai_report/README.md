@@ -43,7 +43,8 @@ scripts/ai_report/
 python3 scripts/ai_report/run.py daily            # 生成 + 发信
 python3 scripts/ai_report/run.py daily --no-email # 只生成
 python3 scripts/ai_report/run.py weekly
-python3 scripts/ai_report/run.py daily --date 2026-10-20  # 补发指定日期
+python3 scripts/ai_report/run.py daily --date 2026-10-20  # 补发指定日期（附补发说明）
+python3 scripts/ai_report/run.py daily --catchup        # 补最近 7 天缺口（最多 3 天）后照常生成
 ```
 
 ## 环境变量
@@ -55,4 +56,9 @@ python3 scripts/ai_report/run.py daily --date 2026-10-20  # 补发指定日期
 | `SMTP_HOST` / `SMTP_PORT` | 默认 `smtp.qq.com` / `465`（465 走 SSL，其余走 STARTTLS） |
 | `SMTP_USER` / `SMTP_PASS` | 发件邮箱与授权码（也接受 `QQ_SMTP_USER` / `QQ_SMTP_PASS`） |
 | `REPORT_TO_EMAIL` | 收件邮箱（也接受 `QQ_SMTP_TO`，逗号分隔多个） |
-| `REPORT_DRY_RUN` | 非空则只生成不发信 |
+| `REPORT_DRY_RUN` | 非空则只生成不发信（workflow_dispatch 的 dry_run 输入）|
+
+## 部署联动
+
+`GITHUB_TOKEN` 推送的提交不会触发 push 类工作流，所以 workflow 在提交后
+用 `gh workflow run deploy.yml` 显式派发一次部署（需要 `actions: write`）。
