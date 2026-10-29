@@ -11,6 +11,11 @@ on:
         description: "daily 或 weekly"
         required: true
         default: "daily"
+      dry_run:
+        description: "只生成不发信（验证链路用）"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -54,6 +59,7 @@ jobs:
           SMTP_USER: ${{ secrets.QQ_SMTP_USER }}
           SMTP_PASS: ${{ secrets.QQ_SMTP_PASS }}
           REPORT_TO_EMAIL: ${{ secrets.QQ_SMTP_TO }}
+          REPORT_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
         run: python3 scripts/ai_report/run.py "${{ steps.kind.outputs.kind }}"
 
       - name: Commit and push if changed

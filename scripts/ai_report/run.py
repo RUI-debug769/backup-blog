@@ -153,7 +153,7 @@ def run_weekly(send_mail=True):
         log("ERROR: JSON 校验失败（%s）；原始输出见临时目录" % e)
         return 1
 
-    issue = wk.issue_number(REPORTS_DIR)
+    issue = wk.issue_number(REPORTS_DIR, ds)
     text = wk.render_weekly_text(data, issue, ds)
     html = wk.render_weekly_html(data, issue, ds)
     inner = wk.render_weekly_inner(data, issue, ds)

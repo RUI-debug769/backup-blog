@@ -137,8 +137,22 @@ def parse_weekly_json(raw):
         raise WeeklyReportError("输出中找不到合法的周报 JSON 对象") from e
 
 
-def issue_number(reports_dir):
-    """下一期 = 已存档 weekly-*.md 数 + 1。"""
+def issue_number(reports_dir, date_str=None):
+    """下一期 = 已存档 weekly-*.md 数 + 1。
+
+    同一天重跑同一份周报时沿用已有期号（幂等），避免 No.01 被改写成 No.02。
+    """
+    if date_str:
+        path = os.path.join(reports_dir, "weekly-%s.md" % date_str)
+        if os.path.exists(path):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    head = f.read(600)
+            except OSError:
+                head = ""
+            m = __import__("re").search(r"No\.(\d+)", head)
+            if m:
+                return int(m.group(1))
     return len(glob.glob(os.path.join(reports_dir, "weekly-*.md"))) + 1
 
 
