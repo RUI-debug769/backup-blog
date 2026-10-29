@@ -74,7 +74,7 @@ export const commentConfig: CommentConfig = withUserConfig("comment", {
 		/** 评论输入框位置：bottom（默认，评论框在列表下方）| top（评论框在列表上方） */
 		inputPosition: "bottom",
 		/** 明暗两套 giscus 主题（giscus 主题键或自定义主题 CSS URL），跟随站点明暗切换 */
-		theme: { light: "light", dark: "dark" },
+		theme: { light: "https://murdok.me/giscus-theme-light.css", dark: "https://murdok.me/giscus-theme-dark.css" },
 		/** 评论语言："auto"（跟随站点）| giscus 语言码（如 "zh-CN"、"en"） */
 		lang: "auto",
 		/** giscus client.js 地址；自托管 giscus 时替换为自有地址 */
