@@ -78,3 +78,7 @@ artifacts/lighthouse/*
 # generated AI skills plugin packages
 artifacts/shirone-ai-*
 pw-local.config.ts
+
+# Python
+__pycache__/
+*.pyc
