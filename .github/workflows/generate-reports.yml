@@ -49,6 +49,14 @@ jobs:
           ARK_ENDPOINT_ID: ${{ secrets.ARK_ENDPOINT_ID }}
         run: node scripts/generate-report.mjs "${{ steps.kind.outputs.kind }}"
 
+      - name: Send report email
+        if: steps.kind.outputs.kind == 'daily'
+        env:
+          QQ_SMTP_USER: ${{ secrets.QQ_SMTP_USER }}
+          QQ_SMTP_PASS: ${{ secrets.QQ_SMTP_PASS }}
+          QQ_SMTP_TO: ${{ secrets.QQ_SMTP_TO }}
+        run: python3 scripts/send-report-email.py "${{ steps.kind.outputs.kind }}"
+
       - name: Commit and push if changed
         run: |
           git config user.name "murdo-report-bot"

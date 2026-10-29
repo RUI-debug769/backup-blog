@@ -85,12 +85,19 @@ async function fetchHackathons() {
     );
     if (!res.ok) return [];
     const d = await res.json();
-    return (d.hackathons || []).map((h) => ({
-      title: h.title,
-      url: h.url,
-      dates: h.submission_period_dates,
-      location: h.displayed_location?.location || "",
-    }));
+    return (d.hackathons || [])
+      .map((h) => ({
+        title: h.title,
+        url: h.url,
+        dates: h.submission_period_dates,
+        location: h.displayed_location?.location || "",
+      }))
+      .filter((h) => {
+        const loc = (h.location || "").toLowerCase();
+        // 只保留：线上可远程参与，或杭州/上海/浙江附近的线下赛
+        if (loc.includes("online")) return true;
+        return /hangzhou|shanghai|zhejiang|杭州|上海|浙江/.test(loc);
+      });
   } catch { return []; }
 }
 
