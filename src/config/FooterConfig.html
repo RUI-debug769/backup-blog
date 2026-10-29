@@ -1,6 +1,59 @@
 <!--
-  在这里添加自定义的页脚 HTML 内容（例如 ICP 备案号、公安备案图标与链接、自定义声明等）。
-  需要在 src/config/footerConfig.ts 中保持 enable: true；
-  内容将注入在页脚版权信息上方；若文件留空或仅保留注释，则不会产生任何额外的 DOM 结构。
+  自定义页脚 HTML：注入在页脚版权信息上方。
+  - 备案号
+  - 不蒜子访问统计（站点总访问量 / 访客数）
+  - Powered by 署名（框架 / 主题 / 统计 / 评论 / Live2D 模型作者）
 -->
-<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">浙ICP备2026090015号</a>
+<div class="footer-custom">
+  <p class="footer-custom__line">
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">浙ICP备2026090015号</a>
+    <span class="footer-custom__sep">·</span>
+    <span class="footer-custom__views">
+      访问 <span id="busuanzi_value_site_pv">–</span> 次
+      <span class="footer-custom__sep">·</span>
+      访客 <span id="busuanzi_value_site_uv">–</span> 人
+    </span>
+  </p>
+  <p class="footer-custom__line footer-custom__powered">
+    Powered by
+    <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> ·
+    <a href="https://github.com/LyraVoid/Shirone" target="_blank" rel="noopener">Shirone</a> ·
+    <a href="https://busuanzi.ibruce.info" target="_blank" rel="noopener">不蒜子</a> ·
+    <a href="https://giscus.app" target="_blank" rel="noopener">Giscus</a>
+    <span class="footer-custom__sep">|</span>
+    Live2D 模型 Powered by
+    <a href="https://space.bilibili.com" target="_blank" rel="noopener">火爆鸡王（B站）</a>
+  </p>
+</div>
+<style>
+  .footer-custom {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.9;
+    color: var(--on-surface-variant, #888);
+    text-align: center;
+  }
+  .footer-custom__line { margin: 0.15rem 0; }
+  .footer-custom__sep { opacity: 0.45; margin: 0 0.5em; }
+  .footer-custom a { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }
+  .footer-custom a:hover { border-bottom-color: currentColor; }
+  .footer-custom__powered { opacity: 0.75; font-size: 0.7rem; }
+</style>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script>
+  // Swup 无刷新切页后重新加载不蒜子，保证文章页阅读量随之更新
+  (function () {
+    if (window.__busuanziSwupBound) return;
+    window.__busuanziSwupBound = true;
+    function reloadBusuanzi() {
+      var old = document.querySelector('script[data-busuanzi-reload]');
+      if (old) old.remove();
+      var s = document.createElement('script');
+      s.src = '//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js?' + Date.now();
+      s.async = true;
+      s.setAttribute('data-busuanzi-reload', '1');
+      document.body.appendChild(s);
+    }
+    document.addEventListener('swup:page:view', reloadBusuanzi);
+  })();
+</script>
