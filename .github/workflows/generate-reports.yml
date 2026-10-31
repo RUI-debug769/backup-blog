@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      resend:
+        description: "不重新生成，只把已归档的那篇重发一封邮件"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -60,7 +65,12 @@ jobs:
           SMTP_PASS: ${{ secrets.QQ_SMTP_PASS }}
           REPORT_TO_EMAIL: ${{ secrets.QQ_SMTP_TO }}
           REPORT_DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
-        run: python3 scripts/ai_report/run.py "${{ steps.kind.outputs.kind }}"
+        run: |
+          if [ "${{ github.event.inputs.resend }}" = "true" ]; then
+            python3 scripts/ai_report/run.py "${{ steps.kind.outputs.kind }}" --resend
+          else
+            python3 scripts/ai_report/run.py "${{ steps.kind.outputs.kind }}"
+          fi
 
       - name: Commit and push if changed
         id: commit

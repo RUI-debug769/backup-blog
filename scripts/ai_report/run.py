@@ -24,6 +24,7 @@ import common as rc  # noqa: E402
 import daily as dl  # noqa: E402
 import llm  # noqa: E402
 import weekly as wk  # noqa: E402
+import warm_theme as wt  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -205,11 +206,49 @@ def run_weekly(send_mail=True):
     return 0
 
 
+def run_resend(kind="daily", date_str=None, send_mail=True):
+    """把已归档的报告（.md 正文 + .html 面板）原样重发一封邮件。
+
+    不重新生成、不改内容：读 src/content/reports/<kind>-<date>.md 的正文与
+    src/data/reports/<kind>-<date>.html 的面板，用 warm_theme 套回邮件外壳。
+    """
+    ds = date_str or now_bj().strftime("%Y-%m-%d")
+    md_path = os.path.join(REPORTS_DIR, "%s-%s.md" % (kind, ds))
+    html_path = os.path.join(HTML_DIR, "%s-%s.html" % (kind, ds))
+    if not (os.path.exists(md_path) and os.path.exists(html_path)):
+        log("ERROR: 找不到可重发的归档 %s / %s" % (md_path, html_path))
+        return 1
+    with open(md_path, encoding="utf-8") as f:
+        raw = f.read()
+    text = raw.split("---", 2)[-1].lstrip("\n") if raw.startswith("---") else raw
+    with open(html_path, encoding="utf-8") as f:
+        inner = f.read()
+
+    dot = ds.replace("-", ".")
+    if kind == "weekly":
+        import re
+        m = re.search(r"No\.(\d+)", raw[:400])
+        label = "No.%02d" % int(m.group(1)) if m else ""
+        subject = "AI 技术与思路周报 - %s" % ds
+        doc_title = ("AI 技术与思路周报 %s" % label).strip()
+    else:
+        subject = "AI前沿日报 - %s" % ds
+        doc_title = "AI 前沿日报 %s" % dot
+
+    log("resend: %s（不重新生成）" % md_path)
+    if not send_mail or os.environ.get("REPORT_DRY_RUN"):
+        log("DRY RUN: 跳过发信")
+        return 0
+    ok = _send_email(subject, text, wt.panel_page(doc_title, inner))
+    return 0 if ok else 2
+
+
 def cli(argv):
     kind = "daily"
     date_str = None
     send_mail = True
     catchup = False
+    resend = False
     i = 0
     while i < len(argv):
         a = argv[i]
@@ -227,7 +266,11 @@ def cli(argv):
             send_mail = False
         elif a == "--catchup":
             catchup = True
+        elif a == "--resend":
+            resend = True
         i += 1
+    if resend:
+        return run_resend(kind, date_str, send_mail=send_mail)
     if kind == "weekly":
         return run_weekly(send_mail=send_mail)
     if catchup and not date_str:
