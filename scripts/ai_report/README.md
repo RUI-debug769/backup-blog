@@ -45,6 +45,7 @@ python3 scripts/ai_report/run.py daily --no-email # 只生成
 python3 scripts/ai_report/run.py weekly
 python3 scripts/ai_report/run.py daily --date 2026-10-20  # 补发指定日期（附补发说明）
 python3 scripts/ai_report/run.py daily --catchup        # 补最近 7 天缺口（最多 3 天）后照常生成
+python3 scripts/ai_report/run.py daily --resend         # 不重新生成，把已归档那篇原样重发一封邮件
 ```
 
 ## 环境变量
