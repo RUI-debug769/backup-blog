@@ -1,0 +1,68 @@
+<table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:640px;margin:0 auto;background-color:#fbf6ef;">
+  <tr>
+    <td style="padding:8px 22px 40px 22px;background-color:#fbf6ef;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:#3d352c;font-size:16px;line-height:1.85;letter-spacing:0.2px;">
+
+      <p style="margin:0 0 6px 0;font-size:13px;color:#a98c6b;letter-spacing:2px;">KLEINM · 周记</p>
+      <p style="margin:0 0 10px 0;font-size:22px;line-height:1.5;font-weight:700;color:#2e2620;">我让五十位思想家开口讲"我"，<br/>然后给他们立了一条规矩</p>
+      <p style="margin:0 0 26px 0;font-size:13px;color:#a98c6b;">2026 年 11 月 2 日 · build in public</p>
+
+      <p style="margin:0 0 18px 0;">这一周，博客上多了五十一个人物。五十位思想家，外加一个不肯说话的角色——「装不懂的听众」。</p>
+      <p style="margin:0 0 26px 0;">他们每个人都要用第一人称讲：我理解的"学习"是什么，我又是怎么练的。而我要在每一篇的顶上，放一条声明，写明这些话不是他们说的。</p>
+
+      <p style="margin:0 0 14px 0;"><strong style="color:#8a4a28;">一、这周主要在改房子</strong></p>
+      <p style="margin:0 0 18px 0;">这一周，博客的代码仓库里落了五十四个提交，没有几篇是"写作"，大部分时间在换房子。</p>
+      <p style="margin:0 0 18px 0;">博客换了一套新主题，组件按 Material 3 规范重搭，名字没变，还是 MUR DOS LOG。搬家那天，站内的动态只留了一句：博客搬进了新房子。雨还在下。</p>
+      <p style="margin:0 0 18px 0;">新上线的是「思考」专栏，一共 102 篇。五十位思想家，每人两篇——《什么是学习》和《怎么学习》。名单跨度很大：西蒙、费曼、图灵、冯·诺依曼、香农，也有孔子、王阳明、华罗庚，还有 Karpathy、LeCun、Hinton、梁文锋这些当代名字。</p>
+      <p style="margin:0 0 18px 0;">另外两篇的主角不是人，是一个叫「装不懂的听众」的角色——费曼学习法的另一半。你要讲给一个装作听不懂的人听，才会发现自己哪儿其实没懂。</p>
+      <p style="margin:0 0 18px 0;">然后是"双链"。文章里的方括号词条现在会变成站内链接，文章底部有反链面板，还有一个页面，把全站画成一张关系图。</p>
+      <p style="margin:0 0 18px 0;">这个写法受 Karpathy 那套 LLM wiki 的启发：知识不该只是一排按时间倒序的日志，而该是一张能互相指认的网。</p>
+      <p style="margin:0 0 18px 0;">前沿日报也搬了家。新增了报告专栏，日报和周报按日期归档；生成逻辑从我的电脑挪到了 GitHub 的定时任务里，每天抓一遍信息源，交给模型整理，再发一封 HTML 邮件。顺手补了三样：赛事板块、补漏、重发。</p>
+      <p style="margin:0 0 26px 0;">日报的工具本体，这一周从 0.2.2 走到 0.4.3，七个版本。抓取源换了，搜索接了，抓和写拆开，断网有兜底。还有几件边角事：评论区换成了黑白漫画手账的样子；访问统计换成了自己搭的信标；给 Claude 和 WSL 里那个自学伴侣建了一层共享记忆；上课的期末大作业也在这周交了。</p>
+
+      <p style="margin:0 0 14px 0;"><strong style="color:#8a4a28;">二、那条规矩</strong></p>
+      <p style="margin:0 0 18px 0;">思考专栏最容易被质疑的地方，不是文笔，是声音。</p>
+      <p style="margin:0 0 18px 0;">让模型模仿一位已经去世的人写"我"，稍不注意，就变成了替他发言。所以从第一篇起，专栏就有一条硬规则，印在每篇开头的阅读约定里：</p>
+
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 22px 0;background-color:#f3e7d5;border-left:4px solid #c98a4b;">
+        <tr>
+          <td style="padding:16px 20px;font-size:15px;line-height:1.8;color:#4a3b2c;">
+            本篇第一人称叙事是<b>视角重构</b>，用于组织其思想，不是本人原话；<b>引用块中的引语才有可溯源出处。</b>
+          </td>
+        </tr>
+      </table>
+
+      <p style="margin:0 0 18px 0;">落到结构上，是三件事：文章头部的元信息里，写明声音类型是"重构的第一人称"；写明依据的是哪批著作与演讲；引语一律进引用块，中英对照，标书名和年份。</p>
+      <p style="margin:0 0 18px 0;">正文可以是"我想告诉你的不是机器有多神奇"，但只有引用块里的话，才允许被当成"他说过"。</p>
+      <p style="margin:0 0 18px 0;">这条规则不是提示词里写一句"请不要编造"就够的。提示词是软约束，模型会在两千字之后忘掉它；结构是硬约束——哪一段允许重构，哪一段必须原文，渲染的时候、审稿的时候，都查得到。</p>
+      <p style="margin:0 0 26px 0;">网上现在有大量"某某说"，其实是模型写的。把重构关进一个明确标注的区块里，比事后道歉便宜得多。</p>
+
+      <p style="margin:0 0 14px 0;"><strong style="color:#8a4a28;">三、两个不出声的故障</strong></p>
+      <p style="margin:0 0 18px 0;"><b>第一个：提交成功，不等于上线。</b></p>
+      <p style="margin:0 0 18px 0;">日报是定时任务跑的，它会提交一次。但用一个自动化的身份去提交，这一类提交不会触发另一个部署任务——这是平台防递归的规则。于是每天日报都"提交成功"，网站却停在前一天。</p>
+      <p style="margin:0 0 18px 0;">修法是：提交之后，显式地再派发一次部署。这件事改了我一个习惯——自动化流水线里，每一步都要有一个能被看见的结果。"命令没报错"，不算结果。</p>
+      <p style="margin:0 0 18px 0;"><b>第二个：统计脚本放错地方，等于没放。</b></p>
+      <p style="margin:0 0 18px 0;">访问统计先是用了一个国内老牌服务，它出了故障。换成新服务之后，又发现它的脚本域名在国内打不开，只好自己搭了一个信标。</p>
+      <p style="margin:0 0 18px 0;">更隐蔽的是第三个问题：我把统计脚本注入进文章的页面里，它根本不执行——那个位置不会跑脚本。脚本最后挪到全站的页脚，每一页才真的开始计数。</p>
+      <p style="margin:0 0 26px 0;">两件事的共同点是：失败没有声音。页面还是能打开，提交还是绿的，只有数字不对。</p>
+
+      <p style="margin:0 0 14px 0;"><strong style="color:#8a4a28;">四、下周</strong></p>
+      <p style="margin:0 0 10px 0;">不是许愿，是待办：给报告专栏加订阅，现在只能刷网页、不能订阅，这不对；</p>
+      <p style="margin:0 0 10px 0;">把思考专栏的引语核验表公开：哪一句、出自哪本书、哪一版、哪一页，核过的才标"已核实"；</p>
+      <p style="margin:0 0 10px 0;">日报去重：同一篇论文被三家媒体转述时，只留一手来源；</p>
+      <p style="margin:0 0 30px 0;">收掉主题里几处移动端的排版问题。</p>
+
+      <p style="margin:0 0 30px 0;">房子还在改。下周见。</p>
+
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px dashed #c9b48f;">
+        <tr>
+          <td style="padding:18px 0 0 0;font-size:14px;line-height:1.9;color:#7a6850;">
+            阅读原文 → <a href="https://murdok.me/posts/2026-11-02-blog-as-graph/" style="color:#a4471f;text-decoration:none;word-break:break-all;">https://murdok.me/posts/2026-11-02-blog-as-graph/</a><br/>
+            项目地图：OCOS 认知操作系统 · CRIA 科研实验室 · AI Brain Tools · Frontier Report<br/>
+            博客：murdok.me　GitHub：RUI-debug769
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
