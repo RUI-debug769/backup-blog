@@ -1,0 +1,58 @@
+name: Sync book covers
+
+on:
+  schedule:
+    # 北京时间 07:20（UTC 23:20）——在日报之前跑，部署跟着内容提交走
+    - cron: "20 23 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "src/data/books.ts"
+      - "scripts/books-sync.mjs"
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: books-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch covers from Open Library
+        run: node scripts/books-sync.mjs
+
+      - name: Commit and push if changed
+        id: commit
+        run: |
+          git config user.name "murdo-books-bot"
+          git config user.email "2640403264@qq.com"
+          git add public/assets/books src/data/books.ts
+          if git diff --cached --quiet; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            echo "no cover changes"
+            exit 0
+          fi
+          git commit -m "books: sync covers $(date -u +%Y-%m-%d)"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
+          git push
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      # GITHUB_TOKEN 推送不会触发 push 类工作流，显式派发部署
+      - name: Trigger site deploy
+        if: steps.commit.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref "${GITHUB_REF_NAME}"
