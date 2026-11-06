@@ -4,7 +4,6 @@ published: 2026-10-18
 category: "项目"
 tags: ["项目", "AI", "职业规划"]
 description: "CareerAtlas：结构化自我测评 + 职业规划的完整工作流资产库——79 题溯源校验题库、标准 SOP、外部校准、Claude Skill，外加一个 Next.js 测评向导应用。AI 是施测员，不是算命先生。"
-image: "/images/covers/2026-10-18-careeratlas.webp"
 lang: "zh-CN"
 draft: false
 ---

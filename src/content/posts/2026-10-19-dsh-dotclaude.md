@@ -4,7 +4,6 @@ published: 2026-10-19
 category: "DSH"
 tags: ["DSH", "插件", "Claude Code", "工程"]
 description: "内置的 dsh-tui 0.14.0 其实早就被宿主跳过了。查清这件事之后，我把 Claude Code 项目里真正还空着的那一半——.claude 的命令与权限——做成了一个 DSH 插件。"
-image: "/images/covers/2026-10-19-dsh-dotclaude.webp"
 lang: "zh-CN"
 draft: false
 ---

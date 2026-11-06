@@ -4,7 +4,6 @@ published: 2026-10-25
 category: "产品思考"
 tags: ["产品思考", "React", "LVGL", "嵌入式", "工程"]
 description: "我做的所有工具都在帮你变成更好的人，这一个反过来：它只把你说过的话、你选过的代价、挡住你的现实放在同一屏，然后闭嘴。技术上是 pnpm monorepo + 契约优先 + 998 个测试，和一块涂鸦 T5AI 开发板上的 LVGL 9 固件。"
-image: "/images/covers/2026-10-25-shardseek.webp"
 lang: "zh-CN"
 draft: false
 ---

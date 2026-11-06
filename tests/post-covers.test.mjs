@@ -46,8 +46,14 @@ test("fallback uses stable IDs rather than array order", () => {
 });
 
 test("library rejects duplicate IDs and unsafe file names", () => {
-	assert.throws(() => validatePostCoverLibrary([cover("same"), cover("same")]), /duplicate/);
-	assert.throws(() => validatePostCoverLibrary([{ ...cover("bad"), file: "../bad.webp" }]), /file/);
+	assert.throws(
+		() => validatePostCoverLibrary([cover("same"), cover("same")]),
+		/duplicate/,
+	);
+	assert.throws(
+		() => validatePostCoverLibrary([{ ...cover("bad"), file: "../bad.webp" }]),
+		/file/,
+	);
 	assert.throws(() => validatePostCoverLibrary([]), /empty/);
 });
 
@@ -61,7 +67,11 @@ test("assignment validation rejects stale, unknown, and duplicate mappings", () 
 		/missing/,
 	);
 	assert.throws(
-		() => validatePostCoverAssignments(["a", "b"], library, { a: "alpha", b: "alpha" }),
+		() =>
+			validatePostCoverAssignments(["a", "b"], library, {
+				a: "alpha",
+				b: "alpha",
+			}),
 		/duplicate/,
 	);
 });

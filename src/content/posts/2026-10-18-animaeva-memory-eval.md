@@ -4,7 +4,6 @@ published: 2026-10-18
 category: "项目"
 tags: ["项目", "AI", "开源"]
 description: "AnimaEVA Memory-Eval：用四个数学工具给长期记忆 AI 的身份连续性做自动化体检，从侯世达的怪圈到一条会亮红灯的 CI 测试。"
-image: "/images/covers/2026-10-18-animaeva-memory-eval.webp"
 lang: "zh-CN"
 draft: false
 ---

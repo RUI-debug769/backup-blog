@@ -4,7 +4,6 @@ published: 2026-10-18
 category: "项目"
 tags: ["项目", "AI", "学习"]
 description: "Seeker / Learning Region Market：基于 dsh 二次开发的自学环境——完整学习场景封装成可热插拔的 Region，由市场按谱系策展。用两个异质 Region 证明同一内核能承载完全不同的学习法。"
-image: "/images/covers/2026-10-18-seeker-learning-region-market.webp"
 lang: "zh-CN"
 draft: false
 ---
