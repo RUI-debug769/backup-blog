@@ -182,16 +182,16 @@ const reading = counts.reading ?? 0;
 
 <script>
 	function setupBooksFilter() {
-		const grid = document.getElementById("books-grid");
+		const grid = document.getElementById("books-grid") as HTMLElement | null;
 		if (!grid) return;
-		const chips = Array.from(document.querySelectorAll(".books-chip"));
-		const search = document.getElementById("books-search");
-		const empty = document.getElementById("books-empty");
+		const chips = Array.from(document.querySelectorAll<HTMLElement>(".books-chip"));
+		const search = document.getElementById("books-search") as HTMLInputElement | null;
+		const empty = document.getElementById("books-empty") as HTMLElement | null;
 		const state = { status: "all", genre: "all", q: "" };
 
 		function apply() {
 			let shown = 0;
-			grid.querySelectorAll(".book-card").forEach((card) => {
+			grid!.querySelectorAll<HTMLElement>(".book-card").forEach((card) => {
 				const el = card;
 				const statusOk = state.status === "all" || el.dataset.status === state.status;
 				const genreOk =
@@ -207,7 +207,7 @@ const reading = counts.reading ?? 0;
 
 		chips.forEach((chip) => {
 			chip.addEventListener("click", () => {
-				const kind = chip.dataset.kind || "status";
+				const kind = (chip.dataset.kind === "genre" ? "genre" : "status") as "status" | "genre";
 				const value = chip.dataset.filter || "all";
 				state[kind] = value;
 				chips

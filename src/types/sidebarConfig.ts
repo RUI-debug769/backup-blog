@@ -35,6 +35,9 @@ export type SidebarPage =
 	| "moments" // 动态
 	| "anime" // 番剧收藏
 	| "books" // 书单
+	| "graph" // 双链关系图
+	| "wiki" // 知识索引
+	| "thinking" // Thinking 专栏
 	| "compass" // 站点罗盘
 	| "skills" // 技能
 	| "projects" // 项目

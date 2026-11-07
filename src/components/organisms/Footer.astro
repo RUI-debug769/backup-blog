@@ -82,13 +82,13 @@ if (footerConfig.enable) {
   // GoatCounter 统计：上报访问 + 页脚显示总访问/访客
   // 注意：gc.zgo.at 的 count.js 在国内不可达，这里自己发同样的信标请求
   (function () {
-    var w = window;
+    var w = window as Window & { __gcInit?: boolean };
     if (w.__gcInit) return;
     w.__gcInit = true;
 
     var ENDPOINT = "https://murdo.goatcounter.com";
 
-    function encode(params) {
+    function encode(params: Record<string, string | number | boolean | null | undefined>) {
       var parts = [];
       for (var k in params) {
         var v = params[k];
@@ -113,14 +113,14 @@ if (footerConfig.enable) {
     }
 
     // 页脚在桌面/移动两套布局里各渲染一次，id 重复，所以填充全部同名节点
-    function setAll(id, val) {
+    function setAll(id: string, val: string | number | null | undefined) {
       if (val == null) return;
       var nodes = document.querySelectorAll("[id=" + id + "]");
-      for (var i = 0; i < nodes.length; i++) nodes[i].textContent = val;
+      for (var i = 0; i < nodes.length; i++) nodes[i].textContent = String(val);
     }
 
     // GoatCounter 对没有记录的路径返回 404，但响应体仍是同样的 JSON，所以不判 r.ok
-    function getJson(url) {
+    function getJson(url: string) {
       return fetch(url, { credentials: "omit" })
         .then(function (r) { return r.json(); })
         .catch(function () { return null; });

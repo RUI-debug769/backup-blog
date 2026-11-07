@@ -20,6 +20,8 @@ export interface BookItem {
 	author?: string;
 	/** ISBN-13（无横线亦可），用于自动取封面与元数据 */
 	isbn?: string;
+	/** Open Library 封面 id，仅在 ISBN 无图时作为兜底 */
+	coverId?: string;
 	/** 封面图地址（相对 /public 或绝对 URL）；省略 = 渐变占位 */
 	cover?: string;
 	/** 条目外链；省略时用 douban 拼豆瓣搜索，都没有则封面不可点 */
