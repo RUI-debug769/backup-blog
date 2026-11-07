@@ -7,6 +7,11 @@ import {
 } from "@utils/content-date";
 import { siteMarkdownProcessor } from "@utils/markdown-processor";
 import { initPostIdMap } from "@utils/permalink-utils";
+import { assertPostCoverAssets } from "@utils/post-cover-assets";
+import {
+	resolvePostCover,
+	validatePostCoverAssignments,
+} from "@utils/post-covers";
 import {
 	findUnknownSeriesSlugs,
 	normaliseSeriesSlug,
@@ -14,6 +19,7 @@ import {
 	type SeriesEntity,
 } from "@utils/series-utils";
 import { getCategoryUrl, getPostUrl, url } from "@utils/url-utils";
+import { postCoverAssignments, postCoverLibrary } from "@/data/post-covers";
 
 /**
  * 加载系列实体目录（Astro 内容层会缓存集合加载，多次调用成本可忽略）。
@@ -40,6 +46,18 @@ async function getRawSortedPosts(): Promise<CollectionEntry<"posts">[]> {
 
 	for (const post of allBlogPosts) validatePublicationMetadata(post);
 	const sorted = allBlogPosts.sort(comparePublicationEntries);
+
+	const postIds = sorted.map((post) => post.id);
+	validatePostCoverAssignments(postIds, postCoverLibrary, postCoverAssignments);
+	assertPostCoverAssets(postCoverLibrary);
+	for (const post of sorted) {
+		post.data.image = resolvePostCover(
+			post.id,
+			post.data.image,
+			postCoverLibrary,
+			postCoverAssignments,
+		);
+	}
 
 	// 系列默认分类（回退链）统一在这里落地：显示与聚合共用同一份「有效 category」。
 	// 这里对集合条目 data 的写入是有意为之且幂等的（写入的即解析结果本身，

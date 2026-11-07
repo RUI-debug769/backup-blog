@@ -4,7 +4,6 @@ published: 2026-10-18
 category: "项目"
 tags: ["项目", "AI", "自动化"]
 description: "frontier-report：零依赖 Python 包——headless Claude 深研当日 AI 前沿，严格 JSON 契约校验，渲染暖陶暗色 HTML，SMTP 直投邮箱。还内建了一台基于 KDD 论文的间隔重复学习机。"
-image: "/images/covers/2026-10-18-frontier-report.webp"
 lang: "zh-CN"
 draft: false
 ---
