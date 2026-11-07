@@ -60,6 +60,25 @@ export function validatePostCoverAssignments(
 	}
 }
 
+export function assertCompleteCoverAssignments(
+	postIds: string[],
+	library: PostCover[],
+	assignments: PostCoverAssignments,
+): void {
+	validatePostCoverAssignments(postIds, library, assignments);
+	const assignedPosts = new Set(Object.keys(assignments));
+	for (const postId of postIds) {
+		if (!assignedPosts.has(postId)) {
+			throw new Error(
+				"Post cover assignment missing for post: " +
+					postId +
+					"; run pnpm covers:assign --post " +
+					postId,
+			);
+		}
+	}
+}
+
 export function resolvePostCover(
 	postId: string,
 	manualImage: string,
