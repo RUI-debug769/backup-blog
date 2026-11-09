@@ -1,5 +1,6 @@
 /* This is a script to create a new post markdown file with front-matter */
 
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -128,3 +129,24 @@ lang: ''
 fs.writeFileSync(path.join(targetDir, fileName), content);
 
 console.log(`Post ${fullPath} created`);
+
+const postId = fileName.replace(fileExtensionRegex, "");
+const assignment = spawnSync(
+	process.execPath,
+	[path.join("scripts", "covers", "assign.mjs"), "--post", postId],
+	{ cwd: process.cwd(), encoding: "utf8" },
+);
+if (assignment.stdout) process.stdout.write(assignment.stdout);
+if (assignment.error || assignment.status !== 0) {
+	const detail =
+		assignment.error?.message ||
+		assignment.stderr?.trim() ||
+		`assign exited with status ${assignment.status}`;
+	console.error(
+		`Cover assignment failed for ${postId}; the post was kept.\n${detail}\nResolve the assignment error, then run: pnpm covers:assign --post ${postId}`,
+	);
+} else {
+	console.log(
+		`Cover candidates are pending review for ${postId}; formal frontmatter is unchanged.`,
+	);
+}

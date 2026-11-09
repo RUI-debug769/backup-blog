@@ -5,12 +5,16 @@ import {
 	comparePublicationEntries,
 	validatePublicationMetadata,
 } from "@utils/content-date";
+import { assertNoPendingCoverBatches } from "@utils/cover-expansion";
 import { siteMarkdownProcessor } from "@utils/markdown-processor";
 import { initPostIdMap } from "@utils/permalink-utils";
-import { assertPostCoverAssets } from "@utils/post-cover-assets";
 import {
+	assertPostCoverAssets,
+	readPendingCoverBatches,
+} from "@utils/post-cover-assets";
+import {
+	assertCompleteCoverAssignments,
 	resolvePostCover,
-	validatePostCoverAssignments,
 } from "@utils/post-covers";
 import {
 	findUnknownSeriesSlugs,
@@ -48,7 +52,12 @@ async function getRawSortedPosts(): Promise<CollectionEntry<"posts">[]> {
 	const sorted = allBlogPosts.sort(comparePublicationEntries);
 
 	const postIds = sorted.map((post) => post.id);
-	validatePostCoverAssignments(postIds, postCoverLibrary, postCoverAssignments);
+	assertCompleteCoverAssignments(
+		postIds,
+		postCoverLibrary,
+		postCoverAssignments,
+	);
+	assertNoPendingCoverBatches(readPendingCoverBatches());
 	assertPostCoverAssets(postCoverLibrary);
 	for (const post of sorted) {
 		post.data.image = resolvePostCover(
