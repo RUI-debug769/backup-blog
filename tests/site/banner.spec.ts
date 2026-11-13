@@ -1,5 +1,19 @@
 import { expect, test } from "@playwright/test";
+import { siteConfig } from "../../src/config/siteConfig";
 import { resolveBannerState } from "../../src/utils/banner-state";
+
+const ARTICLE_PATH = "/posts/2026-11-07-diting-write/";
+const ARTICLE_TITLE = "从「记」到「写」：谛听 0.4 的返工";
+const ARTICLE_DESCRIPTION =
+	"0.3 的「写」只是更长的总结。0.4 把它改成短篇小说：同一批原话，白天求准，晚上求像。这篇写这次返工做对的、做错的，以及还没做完的。";
+const ARTICLE_DATE = "2026-11-07";
+const HOME_TEXT = siteConfig.banner.homeText;
+const HOME_TITLE = HOME_TEXT.title;
+const HOME_SUBTITLES = Array.isArray(HOME_TEXT.subtitle)
+	? HOME_TEXT.subtitle
+	: [HOME_TEXT.subtitle];
+const FIRST_SUBTITLE = HOME_SUBTITLES[0];
+const TYPEWRITER = HOME_TEXT.typewriter;
 
 function isBannerAsset(value: string): boolean {
 	return /\/assets\/(?:images\/)?banner\//.test(decodeURIComponent(value));
@@ -24,13 +38,13 @@ async function waitForBannerState(
 
 async function expectSubtitleTyping(page: import("@playwright/test").Page) {
 	const subtitle = page.locator("#banner-wrapper [data-banner-home-copy] p");
-	const expected = "特別なことはないけど、君がいると十分です";
+	const expected = FIRST_SUBTITLE;
 	await expect(subtitle).toHaveAttribute("data-subtitle-state", "typing");
 	const typingText = await subtitle.textContent();
 	expect(typingText).toBeTruthy();
 	expect(expected.startsWith(typingText ?? "")).toBe(true);
 	await expect(subtitle).toHaveAttribute("data-subtitle-state", "complete", {
-		timeout: 7_500,
+		timeout: Math.max(7_500, FIRST_SUBTITLE.length * TYPEWRITER.speed + 10_000),
 	});
 	await expect(subtitle).toHaveText(expected);
 }
@@ -154,38 +168,34 @@ test.describe("banner wallpaper", () => {
 	test("server response includes article banner context", async ({
 		request,
 	}) => {
-		const response = await request.get("/posts/guide/");
+		const response = await request.get(ARTICLE_PATH);
 		expect(response.ok()).toBe(true);
 		const html = await response.text();
 		expect(html).toContain("data-banner-context-title");
-		expect(html).toContain("Shirone Authoring & Usage Guide");
-		expect(html).toContain(
-			"A comprehensive guide to post authoring, frontmatter schema, Markdown extensions, encryption, and media in Shirone.",
-		);
-		expect(html).toContain('datetime="2026-08-26"');
+		expect(html).toContain(ARTICLE_TITLE);
+		expect(html).toContain(ARTICLE_DESCRIPTION);
+		expect(html).toContain(`datetime="${ARTICLE_DATE}"`);
 	});
 
 	test("centers article context in a bounded box with home-scale type", async ({
 		page,
 	}) => {
 		await page.setViewportSize({ width: 1440, height: 1000 });
-		await page.goto("/posts/guide/", { waitUntil: "domcontentloaded" });
+		await page.goto(ARTICLE_PATH, { waitUntil: "domcontentloaded" });
 		await waitForBannerState(page, true);
 		const stage = page.locator("#banner-wrapper");
 		const context = stage.locator("[data-banner-context]");
 		await expect(stage).toHaveAttribute("data-copy-mode", "context");
 		await expect(context).toBeVisible();
 		await expect(context.locator("[data-banner-context-title]")).toHaveText(
-			"Shirone Authoring & Usage Guide",
+			ARTICLE_TITLE,
 		);
 		await expect(
 			context.locator("[data-banner-context-description]"),
-		).toHaveText(
-			"A comprehensive guide to post authoring, frontmatter schema, Markdown extensions, encryption, and media in Shirone.",
-		);
+		).toHaveText(ARTICLE_DESCRIPTION);
 		await expect(context.locator("time")).toHaveAttribute(
 			"datetime",
-			"2026-08-26",
+			ARTICLE_DATE,
 		);
 
 		const layout = await context.evaluate((element) => {
@@ -236,11 +246,15 @@ test.describe("banner wallpaper", () => {
 	}) => {
 		for (const width of [1440, 1024]) {
 			await page.setViewportSize({ width, height: 1000 });
-			await page.goto("/posts/markdown-extended/", {
+			await page.goto(ARTICLE_PATH, {
 				waitUntil: "domcontentloaded",
 			});
 			await waitForBannerState(page, true);
 			const title = page.locator("[data-banner-context-title]");
+			await title.evaluate((element) => {
+				element.textContent = "A deliberately long contextual title";
+				window.dispatchEvent(new Event("resize"));
+			});
 			await expect(title).toHaveAttribute("data-title-fit", "scaled");
 			const layout = await title.evaluate((element) => {
 				const style = getComputedStyle(element);
@@ -301,7 +315,7 @@ test.describe("banner wallpaper", () => {
 		const response = await request.get("/");
 		expect(response.ok()).toBe(true);
 		const html = await response.text();
-		expect(html).toContain("特別なことはないけど、君がいると十分です");
+		expect(html).toContain(FIRST_SUBTITLE);
 		expect(html).toContain("<picture");
 		expect(html).toContain('fetchpriority="high"');
 		expect(html).not.toContain("/assets/banner/desktop/1.webp");
@@ -350,33 +364,27 @@ test.describe("banner wallpaper", () => {
 		await waitForBannerState(page, true);
 		await expect(page.locator("#banner-wrapper")).toHaveAttribute(
 			"data-subtitle-typewriter-enabled",
-			"true",
+			String(TYPEWRITER.enable),
 		);
 		await expect(page.locator("#banner-wrapper")).toHaveAttribute(
 			"data-subtitle-typewriter-speed",
-			"100",
+			String(TYPEWRITER.speed),
 		);
 		await expect(page.locator("#banner-wrapper")).toHaveAttribute(
 			"data-subtitle-typewriter-delete-speed",
-			"50",
+			String(TYPEWRITER.deleteSpeed ?? 50),
 		);
 		await expect(page.locator("#banner-wrapper")).toHaveAttribute(
 			"data-subtitle-typewriter-pause-time",
-			"2000",
+			String(TYPEWRITER.pauseTime ?? 2000),
 		);
 		await expect(page.locator("#banner-wrapper")).toHaveAttribute(
 			"data-subtitle-typewriter-loop",
-			"true",
+			String(TYPEWRITER.loop),
 		);
 		await expect(page.locator("#banner-wrapper")).toHaveAttribute(
 			"data-home-subtitles",
-			JSON.stringify([
-				"特別なことはないけど、君がいると十分です",
-				"今でもあなたは私の光",
-				"君ってさ、知らないうちに私の毎日になってたよ",
-				"君と話すと、なんか毎日がちょっと楽しくなるんだ",
-				"今日はなんでもない日。でも、ちょっとだけいい日",
-			]),
+			JSON.stringify(HOME_SUBTITLES),
 		);
 	});
 
@@ -390,7 +398,7 @@ test.describe("banner wallpaper", () => {
 
 		await page.goto("/", { waitUntil: "domcontentloaded" });
 		await waitForBannerState(page, true);
-		await expect(page.locator("#banner-wrapper h1")).toHaveText("Shirone");
+		await expect(page.locator("#banner-wrapper h1")).toHaveText(HOME_TITLE);
 		await expectSubtitleTyping(page);
 		await expect(page.locator("#navbar")).toHaveClass(
 			/top-app-bar--transparent/,
@@ -443,7 +451,7 @@ test.describe("banner wallpaper", () => {
 			if (isBannerAsset(request.url())) requests.push(request.url());
 		});
 
-		await page.goto("/posts/guide/", { waitUntil: "domcontentloaded" });
+		await page.goto(ARTICLE_PATH, { waitUntil: "domcontentloaded" });
 		await waitForBannerState(page, false);
 		await expect(page.locator("#banner-wrapper")).toBeHidden();
 		await expect(page.locator(".banner-waves")).toBeHidden();
@@ -488,7 +496,13 @@ test.describe("banner wallpaper", () => {
 
 	test("solid preference persists after SSR banner discovery", async ({
 		page,
+		request,
 	}) => {
+		const response = await request.get("/");
+		expect(response.ok()).toBe(true);
+		const html = await response.text();
+		expect(html).toContain("assets/images/banner/desktop/");
+		expect(html).toContain('fetchpriority="high"');
 		await page.addInitScript(() =>
 			localStorage.setItem("wallpaper-mode", "none"),
 		);
@@ -502,8 +516,10 @@ test.describe("banner wallpaper", () => {
 		await expect(page.locator("#banner-wrapper")).toBeHidden();
 		await expect(page.locator(".banner-waves")).toBeHidden();
 		await expectCompactTop(page);
-		expect(requests).toHaveLength(1);
-		expect(isBannerVariant(requests[0], "desktop")).toBe(true);
+		// Solid 模式可在首图请求前隐藏横幅；SSR 候选必须存在，网络发现至多一次。
+		expect(requests.length).toBeLessThanOrEqual(1);
+		if (requests.length === 1)
+			expect(isBannerVariant(requests[0], "desktop")).toBe(true);
 	});
 
 	test("display settings switches modes immediately and persists", async ({
@@ -589,6 +605,7 @@ test.describe("banner wallpaper", () => {
 					3000,
 				),
 			);
+		test.setTimeout(30_000 + images.length * (interval + 2_500));
 		const seen: string[] = [];
 		const readActiveSrc = () =>
 			page
@@ -623,7 +640,7 @@ test.describe("banner wallpaper", () => {
 		await waitForBannerState(page, true);
 		await expect(
 			page.locator("#banner-wrapper [data-banner-home-copy] p"),
-		).toHaveText("特別なことはないけど、君がいると十分です");
+		).toHaveText(FIRST_SUBTITLE);
 		await expect(
 			page.locator("#banner-wrapper [data-banner-home-copy] p"),
 		).toHaveAttribute("data-subtitle-state", "complete");
@@ -648,7 +665,7 @@ test.describe("banner wallpaper", () => {
 		await waitForBannerState(page, true);
 		await expect(
 			page.locator("#banner-wrapper [data-banner-home-copy] p"),
-		).toHaveText("特別なことはないけど、君がいると十分です");
+		).toHaveText(FIRST_SUBTITLE);
 		await expect(
 			page.locator("#banner-wrapper [data-banner-home-copy] p"),
 		).toHaveAttribute("data-subtitle-state", "complete");
@@ -674,7 +691,7 @@ test.describe("banner wallpaper", () => {
 		});
 		await page
 			.locator(
-				'#swup-container a.m3-blog-postcard__title[href="/posts/guide/"]',
+				`#swup-container a.m3-blog-postcard__title[href="${ARTICLE_PATH}"]`,
 			)
 			.click();
 		await page.waitForFunction(
@@ -683,11 +700,11 @@ test.describe("banner wallpaper", () => {
 				"post",
 		);
 		await expect(page.locator("[data-banner-context-title]")).toHaveText(
-			"Shirone Authoring & Usage Guide",
+			ARTICLE_TITLE,
 		);
 		await expect(page.locator("#banner-wrapper")).toHaveAttribute(
 			"aria-label",
-			"Shirone Authoring & Usage Guide",
+			ARTICLE_TITLE,
 		);
 		expect(
 			await page.evaluate(
@@ -723,7 +740,7 @@ test.describe("banner wallpaper", () => {
 		page,
 	}) => {
 		await page.setViewportSize({ width: 1440, height: 1000 });
-		await page.goto("/posts/guide/", { waitUntil: "domcontentloaded" });
+		await page.goto(ARTICLE_PATH, { waitUntil: "domcontentloaded" });
 		await waitForBannerState(page, true);
 		await page.waitForFunction(() => Boolean(window.swup?.hooks));
 		await page.evaluate(() => {
@@ -778,7 +795,7 @@ test.describe("banner wallpaper", () => {
 			},
 		]) {
 			await setup();
-			await page.goto("/posts/guide/", { waitUntil: "domcontentloaded" });
+			await page.goto(ARTICLE_PATH, { waitUntil: "domcontentloaded" });
 			await page.waitForFunction(() => Boolean(window.swup?.hooks));
 			await page.evaluate(() => {
 				(

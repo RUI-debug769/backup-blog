@@ -83,9 +83,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		// 验证标题与元数据
 		// `#post-container` no longer exists; the article body is wrapped in
 		// `#content-wrapper`.
-		const title = page.locator(
-			"#content-wrapper [data-pagefind-meta='title']",
-		);
+		const title = page.locator("#content-wrapper [data-pagefind-meta='title']");
 		await expect(title).toContainText(
 			"MDX Integration and M3E Atomic Components",
 		);
@@ -94,7 +92,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		const filledCards = page.locator(".m3-card.m3-card--filled");
 		await expect(filledCards.first()).toBeVisible();
 
-		const accentBars = page.locator(".m3-accent-bar");
+		const accentBars = page.locator(".custom-md .m3-accent-bar");
 		await expect(accentBars.first()).toBeVisible();
 
 		const badges = page.locator(".m3-badge");
