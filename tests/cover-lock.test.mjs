@@ -17,7 +17,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { transform } from "esbuild";
 import sharp from "sharp";
-import { lockBatch } from "../scripts/covers/lock.mjs";
+import { lockBatch, parseBatchId } from "../scripts/covers/lock.mjs";
 import { assertNoPendingCoverBatches } from "../src/utils/cover-expansion.ts";
 
 const authorization = "Permission review recorded";
@@ -529,4 +529,12 @@ test("concurrent batches are serialized and the later stale assignment is reject
 		),
 	);
 	await assertNoTransactionArtifacts(fixture.root);
+});
+
+test("batch CLI accepts positional, flag, and pnpm separator forms", () => {
+	const id = "batch-2026-11-07-diting-write";
+	assert.equal(parseBatchId([id]), id);
+	assert.equal(parseBatchId(["--batch", id]), id);
+	assert.equal(parseBatchId(["--", id]), id);
+	assert.equal(parseBatchId([]), undefined);
 });

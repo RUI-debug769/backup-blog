@@ -35,6 +35,15 @@ function paths(root, batchId) {
 	};
 }
 
+async function hasTransactionArtifacts(root) {
+	try {
+		return (await readdir(transactionsPath(root))).length > 0;
+	} catch (error) {
+		if (error.code === "ENOENT") return false;
+		throw error;
+	}
+}
+
 function lockPath(root) {
 	return path.join(root, ".shirones", "cover-lock.lock");
 }
@@ -414,9 +423,9 @@ async function lockedResult(root, directory) {
 	};
 }
 
-export async function lockBatch(root, batchId, hooks = {}) {
+async function lockBatchInternal(root, batchId, hooks = {}, lockHeld = false) {
 	const directories = paths(root, batchId);
-	const release = await acquireLock(root);
+	const release = lockHeld ? null : await acquireLock(root);
 	try {
 		if (hooks.afterLock) await hooks.afterLock({ batchId });
 		if (!(await exists(path.join(directories.pending, "batch.json")))) {
@@ -621,13 +630,71 @@ export async function lockBatch(root, batchId, hooks = {}) {
 				await rm(transactionDirectory, { recursive: true, force: true });
 			}
 		}
+	} catch (error) {
+		if (
+			hooks.discardPendingOnFailure &&
+			!(await hasTransactionArtifacts(root))
+		) {
+			await rm(directories.pending, { recursive: true, force: true });
+		}
+		throw error;
+	} finally {
+		if (release) await release();
+	}
+}
+
+export async function lockBatch(root, batchId, hooks = {}) {
+	return lockBatchInternal(root, batchId, hooks);
+}
+
+export async function resolvePostAssignment(root, postId) {
+	if (!SAFE_ID.test(postId)) throw new Error(`Unsafe post ID: ${postId}`);
+	const release = await acquireLock(root);
+	try {
+		const batchId = `batch-${postId}`;
+		const directories = paths(root, batchId);
+		if (
+			(await exists(path.join(directories.pending, "batch.json"))) ||
+			(await exists(path.join(directories.locked, "batch.json")))
+		) {
+			return await lockBatchInternal(root, batchId, {}, true);
+		}
+		const state = await readState(root);
+		if (!Object.hasOwn(state.assignments, postId)) {
+			throw new Error(`Post has no cover assignment: ${postId}`);
+		}
+		const coverId = state.assignments[postId];
+		const cover = state.library.find((entry) => entry.id === coverId);
+		if (!cover) {
+			throw new Error(`Assigned cover is missing from library: ${coverId}`);
+		}
+		validatePostCoverLibrary(state.library);
+		if (
+			new Set(Object.values(state.assignments)).size !==
+			Object.keys(state.assignments).length
+		) {
+			throw new Error(`Duplicate cover assignment for post: ${postId}`);
+		}
+		if (
+			!(await exists(
+				path.join(root, "src", "assets", "images", "post-covers", cover.file),
+			))
+		) {
+			throw new Error(`Assigned cover asset is missing: ${cover.file}`);
+		}
+		return { postId, coverId, image: coverImage(cover.file) };
 	} finally {
 		await release();
 	}
 }
 
+export function parseBatchId(argv) {
+	if (argv[0] === "--batch" || argv[0] === "--") return argv[1];
+	return argv[0];
+}
+
 export async function main(argv = process.argv.slice(2)) {
-	const batchId = argv[0];
+	const batchId = parseBatchId(argv);
 	if (!batchId)
 		throw new Error("Usage: node scripts/covers/lock.mjs <batch-id>");
 	const result = await lockBatch(projectRoot, batchId);

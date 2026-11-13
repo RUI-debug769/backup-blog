@@ -2,7 +2,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
-import { createAssignmentBatch } from "./workflow.mjs";
+import { lockBatch, resolvePostAssignment } from "./lock.mjs";
+import { createAssignmentBatch, readBatch, readState } from "./workflow.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -43,15 +44,58 @@ function postArgument(argv) {
 	return argv.find((argument) => !argument.startsWith("--"));
 }
 
+async function createOrResumeAssignmentBatch(projectRoot, post) {
+	try {
+		return await createAssignmentBatch(projectRoot, post);
+	} catch (error) {
+		let existing;
+		try {
+			existing = await readBatch(projectRoot, `batch-${post.id}`);
+		} catch {
+			throw error;
+		}
+		if (
+			existing.id !== `batch-${post.id}` ||
+			existing.postId !== post.id ||
+			existing.status !== "pending"
+		) {
+			throw error;
+		}
+		return existing;
+	}
+}
+
+function printResult(result) {
+	console.log(JSON.stringify(result));
+	return result;
+}
+
 export async function main(argv = process.argv.slice(2)) {
 	const postId = postArgument(argv);
 	if (!postId)
 		throw new Error("Usage: node scripts/covers/assign.mjs --post <id>");
 	const post = await readPostSubject(root, postId);
-	const batch = await createAssignmentBatch(root, post);
-	console.log(
-		`Pending ${batch.id}: ${batch.proposedCoverId}; ${batch.candidates.length} candidates. Formal state and frontmatter unchanged.`,
-	);
+	const state = await readState(root);
+	if (Object.hasOwn(state.assignments, postId)) {
+		return printResult(await resolvePostAssignment(root, postId));
+	}
+	for (let attempt = 1; attempt <= 4; attempt += 1) {
+		const batch = await createOrResumeAssignmentBatch(root, post);
+		try {
+			const result = await lockBatch(root, batch.id, {
+				discardPendingOnFailure: true,
+			});
+			return printResult(result);
+		} catch (error) {
+			const retryable =
+				error instanceof Error &&
+				(/^Cover is already assigned:/.test(error.message) ||
+					/^Cover source or SHA-256 already occupied:/.test(error.message) ||
+					/^Cover batch not found:/.test(error.message));
+			if (!retryable || attempt === 4) throw error;
+		}
+	}
+	throw new Error(`Cover assignment retry exhausted: ${postId}`);
 }
 
 if (

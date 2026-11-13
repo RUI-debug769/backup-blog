@@ -37,12 +37,13 @@ test("initial sixteen covers and first ten assignments survive migration", () =>
 	assert.equal(postCoverLibrary.length >= 16, true);
 	for (const postId of expectedFirstTen)
 		assert.ok(postCoverAssignments[postId], postId);
+	assert.equal(postCoverAssignments["2026-11-07-diting-write"], "neuro-sama");
 	assert.equal(
 		new Set(Object.values(postCoverAssignments)).size,
 		Object.values(postCoverAssignments).length,
 	);
 	assertCompleteCoverAssignments(
-		expectedFirstTen,
+		[...expectedFirstTen, "2026-11-07-diting-write"],
 		postCoverLibrary,
 		postCoverAssignments,
 	);

@@ -11,14 +11,15 @@ const postIds = [
 	"2026-10-25-shardseek",
 	"2026-11-02-blog-as-graph",
 	"2026-11-06-diting",
+	"2026-11-07-diting-write",
 ];
 
-test("both list pages show ten distinct local covers", async ({ page }) => {
+test("both list pages show eleven distinct local covers", async ({ page }) => {
 	const sources: string[] = [];
 	for (const route of ["/", "/2/"]) {
 		await page.goto(route, { waitUntil: "domcontentloaded" });
 		const cards = page.locator(".m3-blog-postcard");
-		await expect(cards).toHaveCount(route === "/" ? 8 : 2);
+		await expect(cards).toHaveCount(route === "/" ? 8 : 3);
 		for (const card of await cards.all()) {
 			const cover = card.locator("a.m3-blog-postcard__cover");
 			await expect(cover).toHaveCount(1);
@@ -38,8 +39,8 @@ test("both list pages show ten distinct local covers", async ({ page }) => {
 			sources.push((await image.getAttribute("src")) || "");
 		}
 	}
-	expect(sources).toHaveLength(10);
-	expect(new Set(sources).size).toBe(10);
+	expect(sources).toHaveLength(11);
+	expect(new Set(sources).size).toBe(11);
 	for (const source of sources)
 		expect(new URL(source, "http://localhost:4321").origin).toBe(
 			"http://localhost:4321",

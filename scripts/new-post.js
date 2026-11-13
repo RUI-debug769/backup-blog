@@ -146,7 +146,5 @@ if (assignment.error || assignment.status !== 0) {
 		`Cover assignment failed for ${postId}; the post was kept.\n${detail}\nResolve the assignment error, then run: pnpm covers:assign --post ${postId}`,
 	);
 } else {
-	console.log(
-		`Cover candidates are pending review for ${postId}; formal frontmatter is unchanged.`,
-	);
+	console.log(`Cover assigned and locked for ${postId}.`);
 }
