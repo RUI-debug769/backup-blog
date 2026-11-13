@@ -35,6 +35,7 @@ const twikooScriptUrl =
 	"https://cdn.jsdelivr.net/npm/twikoo@1.7.19/dist/twikoo.min.js";
 
 async function mockTwikoo(page: Page) {
+	await page.addInitScript(() => sessionStorage.setItem("introPlayed", "1"));
 	await page.route(twikooScriptUrl, async (route) => {
 		await route.fulfill({
 			contentType: "application/javascript",
