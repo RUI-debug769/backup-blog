@@ -185,6 +185,7 @@ const PIXEL = Buffer.from(
 
 async function mockWaline(page: Page) {
 	await page.addInitScript(() => sessionStorage.setItem("introPlayed", "1"));
+	await page.route("**/live2d/js/*.js", (route) => route.abort());
 	await page.route(waline.scriptUrl, (route) =>
 		route.fulfill({ contentType: "application/javascript", body: SDK }),
 	);
