@@ -4,7 +4,7 @@ published: 2026-11-07
 category: "项目"
 tags: ["AI", "硬件", "产品设计", "写作", "开源"]
 description: "0.3 的「写」只是更长的总结。0.4 把它改成短篇小说：同一批原话，白天求准，晚上求像。这篇写这次返工做对的、做错的，以及还没做完的。"
-image: "/images/diting/main-light.png"
+image: "../../assets/images/post-covers/neuro-sama.webp"
 lang: "zh-CN"
 draft: false
 ---

@@ -84,6 +84,30 @@ export const seriesSchema: z.ZodType = z.object({
 	defaultCategory: z.string().optional().default(""),
 });
 
+/** Schema for long-form thinking entries grouped by philosophical school. */
+export const thinkingSchema: z.ZodType = z.object({
+	title: z.string(),
+	published: z.date(),
+	description: z.string().optional().default(""),
+	tags: z.array(z.string()).optional().default([]),
+	school: z.string().optional().default(""),
+	voice: z.string().optional().default(""),
+	source: z.string().optional().default(""),
+	lang: z.string().optional().default(""),
+});
+
+/** Schema for synchronized frontier daily and weekly reports. */
+export const reportSchema: z.ZodType = z.object({
+	title: z.string(),
+	published: z.date(),
+	description: z.string().optional().default(""),
+	tags: z.array(z.string()).optional().default([]),
+	category: z.string().optional().default(""),
+	lang: z.string().optional().default(""),
+	draft: z.boolean().optional().default(false),
+	image: z.string().optional().default(""),
+});
+
 /**
  * Helper to create a collection definition with the standard glob loader.
  * Package mode users can import this if they need custom paths.

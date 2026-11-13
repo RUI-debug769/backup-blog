@@ -737,6 +737,7 @@ const initialMobileBanner = page === "home";
 			return;
 		}
 
+		prepareCarouselMedia(getActiveImages(currentViewport()));
 		void prepareLayerImage(next, src).then(() => {
 			if (next.src !== resolveImageUrl(src)) return;
 			crossfadeToLayer(nextLayer);
@@ -952,7 +953,8 @@ const initialMobileBanner = page === "home";
 			return;
 		}
 
-		prepareCarouselMedia(images);
+
+		if (state.assetGroup === "mobile") prepareCarouselMedia(images);
 
 		if (runtime.activeGroup !== state.assetGroup || themeChanged) {
 			runtime.activeGroup = state.assetGroup;
