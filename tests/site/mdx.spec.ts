@@ -65,6 +65,8 @@ test.describe("MDX Support and M3E Integration", () => {
 	test.use({ viewport: { width: 1280, height: 900 } });
 
 	test.beforeEach(async ({ page }) => {
+		await page.addInitScript(() => sessionStorage.setItem("introPlayed", "1"));
+		await page.route("**/live2d/js/*.js", (route) => route.abort());
 		await page.route("https://api.github.com/**", (route) =>
 			route.fulfill({
 				status: 200,
