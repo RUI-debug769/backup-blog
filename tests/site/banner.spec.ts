@@ -740,9 +740,15 @@ test.describe("banner wallpaper", () => {
 		page,
 	}) => {
 		await page.setViewportSize({ width: 1440, height: 1000 });
-		await page.goto(ARTICLE_PATH, { waitUntil: "networkidle" });
-		await waitForBannerState(page, true);
+		await page.goto("/", { waitUntil: "networkidle" });
 		await page.waitForFunction(() => Boolean(window.swup?.hooks));
+		await page.evaluate((path) => window.swup?.navigate(path), ARTICLE_PATH);
+		await page.waitForFunction(
+			() =>
+				document.getElementById("swup-container")?.dataset.currentPage ===
+				"post",
+		);
+		await waitForBannerState(page, true);
 		await page.evaluate(() => {
 			const stage = document.getElementById("banner-wrapper");
 			if (!stage) return;
