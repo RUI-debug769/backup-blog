@@ -12,8 +12,8 @@ if (!waline)
 	throw new Error("The theme's default Waline configuration is missing");
 // The emoji fixtures below stand in for the pack `emoji: true` resolves to.
 const defaultEmoji = waline.emoji === true || waline.emoji === undefined;
-const ARTICLE = "/posts/guide/";
-const OTHER_ARTICLE = "/posts/markdown-extended/";
+const ARTICLE = "/posts/2026-11-07-diting-write/";
+const OTHER_ARTICLE = "/posts/2026-11-06-diting/";
 const WRAPPER = "shirone-waline";
 
 const SDK = `
@@ -184,6 +184,8 @@ const PIXEL = Buffer.from(
 );
 
 async function mockWaline(page: Page) {
+	await page.addInitScript(() => sessionStorage.setItem("introPlayed", "1"));
+	await page.route("**/live2d/js/*.js", (route) => route.abort());
 	await page.route(waline.scriptUrl, (route) =>
 		route.fulfill({ contentType: "application/javascript", body: SDK }),
 	);
@@ -460,7 +462,7 @@ test.describe("Waline enabled", () => {
 	});
 
 	test("loads immediately when lazy is false", async ({ page }) => {
-		await page.route("**/posts/guide/", async (route) => {
+		await page.route("**/posts/2026-11-07-diting-write/", async (route) => {
 			if (!route.request().isNavigationRequest()) {
 				await route.continue();
 				return;
@@ -692,7 +694,10 @@ test.describe("Waline enabled", () => {
 				const center = (locator: Locator) =>
 					locator.evaluate((el) => {
 						const box = el.getBoundingClientRect();
-						return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+						return {
+							x: box.x + box.width / 2 + window.scrollX,
+							y: box.y + box.height / 2 + window.scrollY,
+						};
 					});
 				try {
 					for (const direction of ["ltr", "rtl"]) {
@@ -1342,6 +1347,7 @@ test.describe("Waline enabled", () => {
 			const input = editor(page);
 			await input.focus();
 			await page.keyboard.type("k ");
+			await expect.poll(() => stored(page)).toBe("k ");
 			await page.getByRole("button", { name: "Emoji", exact: true }).focus();
 			await page.keyboard.press("Enter");
 			await page.locator('.wl-emoji-popup button[title="weibo_smile"]').focus();
@@ -1397,7 +1403,7 @@ test.describe("Waline enabled", () => {
 				if (request.url().endsWith("/info.json")) packs.push(request.url());
 			});
 			// Only the document: Swup prefetches must not outlive the test in a handler.
-			await page.route("**/posts/guide/", async (route) => {
+			await page.route("**/posts/2026-11-07-diting-write/", async (route) => {
 				if (!route.request().isNavigationRequest()) {
 					await route.fallback();
 					return;

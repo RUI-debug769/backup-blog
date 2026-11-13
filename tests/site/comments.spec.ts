@@ -35,6 +35,7 @@ const twikooScriptUrl =
 	"https://cdn.jsdelivr.net/npm/twikoo@1.7.19/dist/twikoo.min.js";
 
 async function mockTwikoo(page: Page) {
+	await page.addInitScript(() => sessionStorage.setItem("introPlayed", "1"));
 	await page.route(twikooScriptUrl, async (route) => {
 		await route.fulfill({
 			contentType: "application/javascript",
@@ -454,7 +455,9 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 twikoo，跳过 twikoo UI 测试",
 		);
 		await mockTwikoo(page);
-		await page.goto("/posts/guide/", { waitUntil: "networkidle" });
+		await page.goto("/posts/2026-11-07-diting-write/", {
+			waitUntil: "networkidle",
+		});
 
 		// 1. 评论区容器存在且包含标题
 		const commentSection = page.locator("#comments");
@@ -512,7 +515,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 		expect(giscusRequests).toHaveLength(0);
 	});
 
-	for (const path of ["/", "/posts/guide/"]) {
+	for (const path of ["/", "/posts/2026-11-07-diting-write/"]) {
 		test(`Waline leaves no DOM, styles or external requests on ${path} without comments`, async ({
 			page,
 			baseURL,
@@ -564,7 +567,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			return;
 		}
 		await mockWaline(page, options.waline);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		const section = page.locator("#comments");
 		await expect(section).toHaveCount(1);
 		await expect(section).toHaveAttribute("aria-labelledby", "comments-title");
@@ -591,7 +594,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 		);
 		expect(serialized).toMatchObject({
 			serverURL: options.waline.serverURL,
-			path: "/posts/guide/",
+			path: "/posts/2026-11-07-diting-write/",
 			dark: false,
 			comment: false,
 			pageview: false,
@@ -634,7 +637,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 twikoo，跳过 twikoo UI 测试",
 		);
 		await mockTwikoo(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 		await expect(page.locator(".tk-meta-input")).toBeVisible();
 		await page.locator(".tk-input textarea").fill("Draft comment");
@@ -704,7 +707,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 twikoo，跳过 twikoo UI 测试",
 		);
 		await mockTwikoo(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 		await expect(page.locator(".tk-comments-container")).toHaveCount(1);
 		// 一条打开了回复框的评论，连同 Twikoo 运行时注入、决定浏览器/系统行排版的默认样式
@@ -783,7 +786,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 twikoo，跳过 twikoo UI 测试",
 		);
 		await mockTwikoo(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 
 		const textarea = page.locator(".tk-input textarea");
@@ -827,7 +830,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 twikoo，跳过 twikoo UI 测试",
 		);
 		await mockTwikoo(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 
 		const textarea = page.locator(".tk-input textarea");
@@ -849,7 +852,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 twikoo，跳过 twikoo UI 测试",
 		);
 		await mockTwikoo(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 		const commentsContainer = page.locator(".tk-comments-container");
 		const skeleton = commentsContainer.locator(":scope > .twikoo-skeleton");
@@ -889,7 +892,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 twikoo，跳过 twikoo UI 测试",
 		);
 		await mockTwikoo(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 		await expect(page.locator(".tk-admin-entry")).toBeVisible();
 		const scrollBeforeLike = await page.evaluate(() => window.scrollY);
@@ -934,7 +937,9 @@ test.describe("Comment System - Configuration & Architecture", () => {
 	test("loadScriptOnce deduplicates script injection in browser", async ({
 		page,
 	}) => {
-		await page.goto("/posts/guide/", { waitUntil: "networkidle" });
+		await page.goto("/posts/2026-11-07-diting-write/", {
+			waitUntil: "networkidle",
+		});
 
 		const result = await page.evaluate(async () => {
 			// @ts-expect-error 此绝对 URL 由 Vite 在浏览器中解析。
@@ -974,7 +979,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 giscus，跳过 giscus UI 测试",
 		);
 		await mockGiscus(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 
 		// 骨架屏先渲染，iframe 挂载后 :has() 隐藏骨架屏
@@ -1024,7 +1029,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 		// 站点亮色 + 浏览器偏好暗色：外壳若只声明 light，Chromium 会给 iframe
 		// 强制铺上不透明深色画布，评论区出现黑底（Shirone#80）。
 		await page.emulateMedia({ colorScheme: "dark" });
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 
 		const iframe = page.locator(".shirone-giscus-wrapper iframe.giscus-frame");
@@ -1044,7 +1049,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 giscus，跳过 giscus UI 测试",
 		);
 		await mockGiscus(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 
 		const wrapper = page.locator(".shirone-giscus-wrapper");
@@ -1097,7 +1102,7 @@ test.describe("Comment System - Configuration & Architecture", () => {
 			"评论未启用或 provider 非 giscus，跳过 giscus UI 测试",
 		);
 		await mockGiscus(page);
-		await page.goto("/posts/guide/");
+		await page.goto("/posts/2026-11-07-diting-write/");
 		await page.locator("#comments").scrollIntoViewIfNeeded();
 		await expect(
 			page.locator(".shirone-giscus-wrapper iframe.giscus-frame"),

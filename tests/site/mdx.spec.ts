@@ -65,6 +65,8 @@ test.describe("MDX Support and M3E Integration", () => {
 	test.use({ viewport: { width: 1280, height: 900 } });
 
 	test.beforeEach(async ({ page }) => {
+		await page.addInitScript(() => sessionStorage.setItem("introPlayed", "1"));
+		await page.route("**/live2d/js/*.js", (route) => route.abort());
 		await page.route("https://api.github.com/**", (route) =>
 			route.fulfill({
 				status: 200,
@@ -83,9 +85,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		// 验证标题与元数据
 		// `#post-container` no longer exists; the article body is wrapped in
 		// `#content-wrapper`.
-		const title = page.locator(
-			"#content-wrapper [data-pagefind-meta='title']",
-		);
+		const title = page.locator("#content-wrapper [data-pagefind-meta='title']");
 		await expect(title).toContainText(
 			"MDX Integration and M3E Atomic Components",
 		);
@@ -94,7 +94,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		const filledCards = page.locator(".m3-card.m3-card--filled");
 		await expect(filledCards.first()).toBeVisible();
 
-		const accentBars = page.locator(".m3-accent-bar");
+		const accentBars = page.locator(".custom-md .m3-accent-bar");
 		await expect(accentBars.first()).toBeVisible();
 
 		const badges = page.locator(".m3-badge");
@@ -113,7 +113,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		const chips = page.locator(".m3-chip");
 		await expect(chips.first()).toBeVisible();
 
-		const segmentedButtons = page.locator(".m3-segmented");
+		const segmentedButtons = page.locator(".custom-md .m3-segmented");
 		await expect(segmentedButtons.first()).toBeVisible();
 
 		const checkboxes = page.locator(".m3-checkbox");
@@ -131,7 +131,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		await expect(switchInput).toBeChecked();
 
 		// 测试开关交互
-		await switchInput.click({ force: true });
+		await switchInput.locator("..").click();
 		await expect(switchInput).not.toBeChecked();
 
 		// 验证进度指示器
@@ -181,7 +181,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		await expect(switchInput).toBeVisible();
 		await expect(switchInput).toBeChecked();
 
-		await switchInput.click({ force: true });
+		await switchInput.locator("..").click();
 		await expect(switchInput).not.toBeChecked();
 	});
 
