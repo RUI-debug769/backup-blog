@@ -740,7 +740,7 @@ test.describe("banner wallpaper", () => {
 		page,
 	}) => {
 		await page.setViewportSize({ width: 1440, height: 1000 });
-		await page.goto(ARTICLE_PATH, { waitUntil: "domcontentloaded" });
+		await page.goto(ARTICLE_PATH, { waitUntil: "networkidle" });
 		await waitForBannerState(page, true);
 		await page.waitForFunction(() => Boolean(window.swup?.hooks));
 		await page.evaluate(() => {

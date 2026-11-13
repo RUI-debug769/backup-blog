@@ -111,7 +111,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		const chips = page.locator(".m3-chip");
 		await expect(chips.first()).toBeVisible();
 
-		const segmentedButtons = page.locator(".m3-segmented");
+		const segmentedButtons = page.locator(".custom-md .m3-segmented");
 		await expect(segmentedButtons.first()).toBeVisible();
 
 		const checkboxes = page.locator(".m3-checkbox");
@@ -129,7 +129,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		await expect(switchInput).toBeChecked();
 
 		// 测试开关交互
-		await switchInput.click({ force: true });
+		await switchInput.locator("..").click();
 		await expect(switchInput).not.toBeChecked();
 
 		// 验证进度指示器
@@ -179,7 +179,7 @@ test.describe("MDX Support and M3E Integration", () => {
 		await expect(switchInput).toBeVisible();
 		await expect(switchInput).toBeChecked();
 
-		await switchInput.click({ force: true });
+		await switchInput.locator("..").click();
 		await expect(switchInput).not.toBeChecked();
 	});
 
