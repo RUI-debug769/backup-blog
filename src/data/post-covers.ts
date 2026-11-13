@@ -190,4 +190,6 @@ export const postCoverAssignments: PostCoverAssignments = {
 	"2026-10-25-shardseek": "circuit-light",
 	"2026-11-02-blog-as-graph": "knowledge-graph",
 	"2026-11-06-diting": "private-listening",
+	"2026-11-07-diting-write": "neuro-sama",
+	"mdx-showcase": "hello-world",
 };
