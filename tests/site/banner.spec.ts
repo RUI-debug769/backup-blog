@@ -144,6 +144,11 @@ async function expectCompactTop(page: import("@playwright/test").Page) {
 }
 
 test.describe("banner wallpaper", () => {
+	test.beforeEach(async ({ page }) => {
+		await page.addInitScript(() => sessionStorage.setItem("introPlayed", "1"));
+		await page.route("**/live2d/js/*.js", (route) => route.abort());
+	});
+
 	test("uses mutually exclusive home and contextual copy modes", () => {
 		const base = {
 			mode: "banner" as const,
@@ -398,6 +403,11 @@ test.describe("banner wallpaper", () => {
 
 		await page.goto("/", { waitUntil: "domcontentloaded" });
 		await waitForBannerState(page, true);
+		expect(
+			await page
+				.locator(".banner-stage__image--front")
+				.evaluate((image) => image.getAnimations().length),
+		).toBe(0);
 		await expect(page.locator("#banner-wrapper h1")).toHaveText(HOME_TITLE);
 		await expectSubtitleTyping(page);
 		await expect(page.locator("#navbar")).toHaveClass(
@@ -418,11 +428,6 @@ test.describe("banner wallpaper", () => {
 		expect(requests.some((request) => isBannerVariant(request, "mobile"))).toBe(
 			false,
 		);
-		expect(
-			await page
-				.locator(".banner-stage__image--front")
-				.evaluate((image) => image.getAnimations().length),
-		).toBe(0);
 	});
 
 	test("desktop progress moves below the app bar after leaving the Banner", async ({
