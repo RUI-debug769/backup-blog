@@ -17,7 +17,7 @@ draft: false
 
 0.4 换了一个目标：写一篇**只有今天这些原话才能长出来**的短篇。不是复述，是重讲。
 
-![主屏：三栏、今日原话与「让它写」](/images/diting/main-light.png)
+![主屏：三栏、今日原话与「让它写」](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/diting/main-light.png)
 
 ## 一、同一批原话，两种用法
 
@@ -71,7 +71,7 @@ draft: false
 
 读者可以点正文，一次显示完；落后太多也会自动加速。正常几百字的内容不会被加速，只有落后太多才追。这个细节写在 `ArticleActivity.java` 的 `PACE_MS` 里，答辩时不要引用旧数字。
 
-![日纸与夜纸](/images/diting/themes.png)
+![日纸与夜纸](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/diting/themes.png)
 
 ## 五、界面从「阅读器」变成「手帐」
 
@@ -83,7 +83,7 @@ draft: false
 - 主屏只留一个主按钮「让它写」；朱砂只给这一个按钮。
 - 屏幕上那只石兽是 20×18 像素，八个状态分别对应链路的真实状态：记下、别人说话、被否定、书写、写完、断连、被戳、睡着。
 
-![石兽的八个状态](/images/diting/pet-states.png)
+![石兽的八个状态](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/diting/pet-states.png)
 
 ## 六、0.4 还多了「声语」
 

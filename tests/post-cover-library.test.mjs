@@ -40,11 +40,20 @@ test("initial sixteen covers and first ten assignments survive migration", () =>
 	assert.equal(postCoverAssignments["2026-11-07-diting-write"], "neuro-sama");
 	assert.equal(postCoverAssignments["mdx-showcase"], "hello-world");
 	assert.equal(
+		postCoverAssignments["2026-11-20-prompt-evolution-recap"],
+		"virtual-singer",
+	);
+	assert.equal(
 		new Set(Object.values(postCoverAssignments)).size,
 		Object.values(postCoverAssignments).length,
 	);
 	assertCompleteCoverAssignments(
-		[...expectedFirstTen, "2026-11-07-diting-write", "mdx-showcase"],
+		[
+			...expectedFirstTen,
+			"2026-11-07-diting-write",
+			"2026-11-20-prompt-evolution-recap",
+			"mdx-showcase",
+		],
 		postCoverLibrary,
 		postCoverAssignments,
 	);

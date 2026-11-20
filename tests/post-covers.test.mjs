@@ -18,6 +18,8 @@ const cover = (id) => ({
 	authorization: "Permission status recorded from the source page",
 });
 const library = [cover("beta"), cover("alpha")];
+const COVER_BASE =
+	"https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/post-covers";
 
 test("FNV-1a hash is stable", () => {
 	assert.equal(hashPostId("hello"), 0x4f9f2cab);
@@ -31,17 +33,17 @@ test("manual frontmatter wins over every fallback", () => {
 	);
 });
 
-test("explicit assignment returns the content-relative asset path", () => {
+test("explicit assignment returns the configured cover URL", () => {
 	assert.equal(
 		resolvePostCover("post", "", library, { post: "alpha" }),
-		"../../assets/images/post-covers/alpha.webp",
+		`${COVER_BASE}/alpha.webp`,
 	);
 });
 
 test("fallback uses stable IDs rather than array order", () => {
 	assert.equal(
 		resolvePostCover("hello", "", library, {}),
-		"../../assets/images/post-covers/beta.webp",
+		`${COVER_BASE}/beta.webp`,
 	);
 });
 

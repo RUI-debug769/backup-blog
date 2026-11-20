@@ -1,6 +1,6 @@
 import type { PostCover, PostCoverAssignments } from "@/types/postCovers";
 
-const COVER_BASE = "../../assets/images/post-covers";
+const COVER_BASE = "https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/post-covers";
 const SAFE_FILE = /^[a-z0-9][a-z0-9-]*\.webp$/;
 
 export function hashPostId(value: string): number {

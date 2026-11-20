@@ -12,9 +12,10 @@ const postIds = [
 	"2026-11-02-blog-as-graph",
 	"2026-11-06-diting",
 	"2026-11-07-diting-write",
+	"2026-11-20-prompt-evolution-recap",
 ];
 
-test("both list pages show distinct local covers", async ({ page }) => {
+test("both list pages show distinct covers", async ({ page }) => {
 	const sources: string[] = [];
 	let includesDraftFixture = false;
 	for (const route of ["/", "/2/"]) {
@@ -23,7 +24,7 @@ test("both list pages show distinct local covers", async ({ page }) => {
 		includesDraftFixture ||=
 			(await page.locator('a[href="/posts/mdx-showcase/"]').count()) > 0;
 		await expect(cards).toHaveCount(
-			route === "/" ? 8 : includesDraftFixture ? 4 : 3,
+			route === "/" ? 8 : postIds.length - 8 + (includesDraftFixture ? 1 : 0),
 		);
 		for (const card of await cards.all()) {
 			const cover = card.locator("a.m3-blog-postcard__cover");
@@ -47,63 +48,32 @@ test("both list pages show distinct local covers", async ({ page }) => {
 	const expectedCount = postIds.length + (includesDraftFixture ? 1 : 0);
 	expect(sources).toHaveLength(expectedCount);
 	expect(new Set(sources).size).toBe(expectedCount);
-	for (const source of sources)
-		expect(new URL(source, "http://localhost:4321").origin).toBe(
-			"http://localhost:4321",
+	for (const source of sources) {
+		const origin = new URL(source, "http://localhost:4321").origin;
+		expect(["http://localhost:4321", "https://gcore.jsdelivr.net"]).toContain(
+			origin,
 		);
+	}
 });
 
-test("every detail page has an eager responsive cover and OG image", async ({
+test("every canonical detail page keeps its OG image without an inline cover", async ({
 	page,
 }) => {
 	for (const postId of postIds) {
 		await page.goto(`/posts/${postId}/`, { waitUntil: "domcontentloaded" });
-		const image = page.locator("#post-cover img");
-		await expect(image).toHaveAttribute("loading", "eager");
-		await expect(image).toHaveAttribute("fetchpriority", "high");
-		await expect(
-			page.locator('#post-cover source[type="image/avif"]'),
-		).toHaveCount(1);
-		await expect(
-			page.locator('#post-cover source[type="image/webp"]'),
-		).toHaveCount(1);
-		await expect
-			.poll(() =>
-				image.evaluate(
-					(element) =>
-						element instanceof HTMLImageElement &&
-						element.complete &&
-						element.naturalWidth > 0,
-				),
-			)
-			.toBe(true);
-		const source = (await image.getAttribute("src")) || "";
-		expect(new URL(source, "http://localhost:4321").origin).toBe(
-			"http://localhost:4321",
-		);
 		await expect(page.locator('meta[property="og:image"]')).toHaveCount(1);
+		await expect(page.locator("#post-cover")).toHaveCount(0);
 	}
 });
 
-test("every legacy blog route keeps the same local cover", async ({ page }) => {
+test("every legacy blog route redirects to the canonical OG page", async ({
+	page,
+}) => {
 	for (const postId of postIds) {
 		await page.goto(`/blog/${postId}/`, { waitUntil: "domcontentloaded" });
-		const image = page.locator("#post-cover img");
-		await expect(image).toHaveCount(1);
-		await expect
-			.poll(() =>
-				image.evaluate(
-					(element) =>
-						element instanceof HTMLImageElement &&
-						element.complete &&
-						element.naturalWidth > 0,
-				),
-			)
-			.toBe(true);
-		const source = (await image.getAttribute("src")) || "";
-		expect(new URL(source, "http://localhost:4321").origin).toBe(
-			"http://localhost:4321",
-		);
+		await expect(page).toHaveURL(new RegExp(`/posts/${postId}/$`));
+		await expect(page.locator('meta[property="og:image"]')).toHaveCount(1);
+		await expect(page.locator("#post-cover")).toHaveCount(0);
 	}
 });
 
