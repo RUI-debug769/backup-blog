@@ -41,7 +41,7 @@ test("initial sixteen covers and first ten assignments survive migration", () =>
 	assert.equal(postCoverAssignments["mdx-showcase"], "hello-world");
 	assert.equal(
 		postCoverAssignments["2026-11-20-prompt-evolution-recap"],
-		"virtual-singer",
+		"computer-desk",
 	);
 	assert.equal(
 		new Set(Object.values(postCoverAssignments)).size,
