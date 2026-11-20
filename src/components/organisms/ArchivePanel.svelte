@@ -106,7 +106,10 @@ const groupOptions = [
 const filtered = $derived(
 	sortedPosts.filter((p) => {
 		if (uncategorized && p.data.category) return false;
-		if (category && p.data.category !== category) return false;
+		if (category) {
+			const pc = p.data.category || "";
+			if (pc !== category && !pc.startsWith(category + "/")) return false;
+		}
 		if (tag && !p.data.tags.includes(tag)) return false;
 		return true;
 	}),

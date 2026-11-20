@@ -1,9 +1,8 @@
 ---
 /**
- * 分类索引页：全部分类的总览入口。
- * 纯 SSR 直出（无客户端岛）：规格表行 = MetaIcon tonal 徽标 + 分类名 +
- * 点线引导 + 计数（与 SiteStats/PostMeta 同一视觉语言），
- * 行点击进入归档页的对应分类过滤（/archive/?category=x）。
+ * 分类索引页：一级分类 + 二级子类的层级总览（参考 blog.cosine.ren 的目录结构）。
+ * category 字段用 "一级/二级" 形式（如 笔记/AI）。一级行计数含全部子类，
+ * 点击进入归档页对应分类过滤（/archive/?category=x，过滤为前缀匹配）。
  */
 import Card from "@components/atoms/display/Card.svelte";
 import MetaIcon from "@components/atoms/display/MetaIcon.astro";
@@ -12,6 +11,7 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getCategoryList } from "@utils/content-utils";
+import { getCategoryUrl } from "@utils/url-utils";
 
 const categories = await getCategoryList();
 const totalPosts = categories.reduce(
@@ -19,6 +19,23 @@ const totalPosts = categories.reduce(
 	0,
 );
 const categorySummary = `${categories.length} ${i18n(I18nKey.categoriesCount)} · ${totalPosts} ${i18n(I18nKey.postsCount)}`;
+
+type SubRow = { name: string; count: number; url: string };
+type Group = { name: string; count: number; url: string; subs: SubRow[] };
+const tree = new Map<string, Group>();
+for (const c of categories) {
+	const [topRaw, ...rest] = c.name.split("/");
+	const top = topRaw.trim();
+	const sub = rest.join("/").trim();
+	if (!tree.has(top)) {
+		tree.set(top, { name: top, count: 0, url: getCategoryUrl(top), subs: [] });
+	}
+	const node = tree.get(top)!;
+	node.count += c.count;
+	if (sub) node.subs.push({ name: sub, count: c.count, url: c.url });
+	else node.url = c.url;
+}
+const groups = [...tree.values()].sort((a, b) => a.name.localeCompare(b.name, "zh"));
 ---
 
 <MainGridLayout title={i18n(I18nKey.categories)} description={categorySummary} page="categories">
@@ -28,21 +45,33 @@ const categorySummary = `${categories.length} ${i18n(I18nKey.categoriesCount)} �
 			title={i18n(I18nKey.categories)}
 				subtitle={categorySummary}
 		/>
-		{categories.length > 0 && (
+		{groups.length > 0 && (
 			<ul class="category-index__list">
-				{categories.map((category) => (
-					<li>
-						<a class="category-index__row m3-state-layer" href={category.url}>
-							<MetaIcon icon="material-symbols:folder-outline-rounded" />
-							<span class="category-index__name">{category.name}</span>
-							<span class="category-index__rule" aria-hidden="true"></span>
-							<span class="category-index__count">{category.count}</span>
-						</a>
-					</li>
+				{groups.map((group) => (
+					<>
+						<li class="category-index__top">
+							<a class="category-index__row m3-state-layer" href={group.url}>
+								<MetaIcon icon="material-symbols:folder-outline-rounded" />
+								<span class="category-index__name">{group.name}</span>
+								<span class="category-index__rule" aria-hidden="true"></span>
+								<span class="category-index__count">{group.count}</span>
+							</a>
+						</li>
+						{group.subs.map((sub) => (
+							<li>
+								<a class="category-index__row category-index__row--sub m3-state-layer" href={sub.url}>
+									<MetaIcon icon="material-symbols:subdirectory-arrow-right-rounded" />
+									<span class="category-index__name">{group.name} / {sub.name}</span>
+									<span class="category-index__rule" aria-hidden="true"></span>
+									<span class="category-index__count">{sub.count}</span>
+								</a>
+							</li>
+						))}
+					</>
 				))}
 			</ul>
 		)}
-		{categories.length === 0 && (
+		{groups.length === 0 && (
 			<div class="category-index__empty">
 				<span>{i18n(I18nKey.noData)}</span>
 			</div>
@@ -64,6 +93,9 @@ const categorySummary = `${categories.length} ${i18n(I18nKey.categoriesCount)} �
 		padding: 0
 		list-style: none
 
+	&__top
+		grid-column: 1 / -1
+
 	&__row
 		display: flex
 		align-items: center
@@ -78,40 +110,20 @@ const categorySummary = `${categories.length} ${i18n(I18nKey.categoriesCount)} �
 		&:hover
 			background: unquote("color-mix(in oklab, var(--on-surface) 6%, transparent)")
 
-	&__name
-		font: var(--m3e-type-body-large)
-		font-weight: 500
-		color: var(--on-surface)
-		white-space: nowrap
-		overflow: hidden
-		text-overflow: ellipsis
+	&__row--sub
+		min-height: 2.75rem
+		.category-index__name
+			font-size: 0.9em
+			opacity: 0.85
 
-	/* 点线引导：与 SiteStats 同语言，沉到文字基线附近 */
+	&__name
+		flex-shrink: 0
+
 	&__rule
 		flex: 1
-		align-self: flex-end
-		margin-bottom: 0.35em
-		min-width: 0.75rem
-		border-bottom: 2px dotted var(--outline-variant)
+		border-bottom: 1px dashed var(--outline-variant)
 
 	&__count
-		font: var(--m3e-type-title-small)
-		font-weight: 600
-		font-variant-numeric: tabular-nums
 		color: var(--on-surface-variant)
-		white-space: nowrap
-
-	&__empty
-		display: flex
-		align-items: center
-		justify-content: center
-		min-height: 11rem
-		color: var(--on-surface-variant)
-		font: var(--m3e-type-body-large)
-
-	@media (max-width: bp-sm - 1px)
-		padding: 1rem 0.75rem
-
-		&__list
-			grid-template-columns: 1fr
+		font-size: 0.9em
 </style>
