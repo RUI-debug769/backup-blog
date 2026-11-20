@@ -86,11 +86,9 @@ function isActive(link: (typeof links)[number]): boolean {
 		</nav>
 		<div class="flex-1"></div>
 		<Search client:only="svelte"></Search>
-		{!siteConfig.themeColor.fixed && (
-			<IconButton id="display-settings-switch" label="Display Settings" class="shrink-0">
-				<Icon icon="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
-			</IconButton>
-		)}
+		<IconButton id="display-settings-switch" label="Display Settings" class="shrink-0">
+			<Icon icon="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
+		</IconButton>
 		<LightDarkSwitch client:only="svelte"></LightDarkSwitch>
 		<DisplaySettings client:only="svelte" class="top-full right-4 max-w-[calc(100vw-2rem)] md:right-0"></DisplaySettings>
 	</div>

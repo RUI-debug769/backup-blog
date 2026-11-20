@@ -23,7 +23,19 @@ test("Waline remains opt-in and tolerates legacy configs without its block", () 
 	assert.equal(resolveCommentOptions({ ...valid, provider: "none" }), null);
 	const { waline: _, ...legacy } = valid;
 	assert.equal(resolveCommentOptions(legacy), null);
-	assert.equal(resolveCommentOptions({ ...legacy, provider: "giscus" }), null);
+	assert.equal(
+		resolveCommentOptions({
+			...legacy,
+			provider: "giscus",
+			giscus: {
+				...commentConfig.giscus,
+				repo: "",
+				repoId: "",
+				categoryId: "",
+			},
+		}),
+		null,
+	);
 });
 
 test("Waline requires a service URL and both client resources", () => {
