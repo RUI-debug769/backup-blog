@@ -50,7 +50,7 @@ function isActive(link: (typeof links)[number]): boolean {
 			<span class="h-5 w-1 rounded-full bg-[var(--primary)] transition-all group-hover:h-7"></span>
 			<span class="text-lg font-bold truncate group-hover:text-[var(--primary)]">{siteConfig.title}</span>
 		</a>
-		<nav class:list={["top-app-bar__nav hidden h-full items-center gap-1 lg:flex", siteConfig.topAppBar.contentAlign === "center" ? "lg:min-w-0 lg:flex-1 lg:justify-center xl:absolute xl:left-1/2 xl:-translate-x-1/2 xl:flex-none" : "ml-4"]} aria-label="Main navigation">
+		<nav class:list={["top-app-bar__nav hidden h-full items-center gap-1", siteConfig.topAppBar.contentAlign === "center" ? "lg:block lg:relative lg:min-w-0 lg:flex-1" : "lg:flex ml-4"]} aria-label="Main navigation" data-arc-nav>
 			{links.map((link) => {
 				const href = link.external ? link.url : hrefFor(link.url);
 				const active = isActive(link);
@@ -228,6 +228,66 @@ if (document.readyState === 'loading') {
 	bindSearchTriggers();
 }
 document.addEventListener('swup:content:replace', bindSearchTriggers);
+
+// Arc navigation: lay out nav items along a downward-opening arc (bowl shape).
+// Radius scales with container width; items shrink when space runs out, so they never overlap.
+function setupArcNav() {
+	const nav = document.querySelector("[data-arc-nav]");
+	if (!nav) return;
+	const PHI = 34 * Math.PI / 180;
+	let natural = 0;
+
+	function clearItems(items) {
+		items.forEach((el) => { el.style.position = ""; el.style.left = ""; el.style.top = ""; el.style.transform = ""; });
+	}
+
+	function layout() {
+		const items = Array.from(nav.children);
+		const n = items.length;
+		if (n < 2) return;
+		if (window.innerWidth < 1024 || getComputedStyle(nav).display === "none") {
+			clearItems(items);
+			return;
+		}
+		// measure natural width in normal flow first (absolute would zero widths)
+		clearItems(items);
+		const avail = nav.clientWidth;
+		nav.style.display = "flex";
+		items.forEach((el) => { el.style.flex = "0 0 auto"; }); // no shrink: measure true widths
+		const widths = items.map((el) => el.offsetWidth);
+		const naturalW = widths.reduce((a, b) => a + b, 0) || avail;
+		nav.style.display = "";
+		items.forEach((el) => { el.style.flex = ""; });
+		const scale = Math.min(1, avail / Math.max(naturalW, 1));
+		const Rx = avail / (2 * Math.sin(PHI));
+		const Ry = 90; // flatten the arc vertically so it stays inside the top bar
+		const totalW = widths.reduce((a, b) => a + b, 0) || 1;
+		let acc = -PHI;
+		let prevRight = -Infinity;
+		items.forEach((el, i) => {
+			const th = acc + ((widths[i] / totalW) * 2 * PHI) / 2; // width-weighted angle
+			acc += (widths[i] / totalW) * 2 * PHI;
+			let x = Rx * Math.sin(th);
+			const y = Ry * (Math.cos(th) - 1); // bowl: center lowest, edges lift
+			const w = widths[i] * scale;
+			// collision fix: never let this item overlap the previous one
+			if (x - w / 2 < prevRight) x = prevRight + w / 2;
+			prevRight = x + w / 2;
+			el.style.position = "absolute";
+			el.style.left = "50%";
+			el.style.top = "50%";
+			el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+		});
+	}
+
+	layout();
+	let t;
+	window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(layout, 60); });
+	document.addEventListener("astro:page-load", layout);
+	if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+}
+setupArcNav();
+
 </script>}
 
 <style>

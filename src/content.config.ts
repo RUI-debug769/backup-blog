@@ -62,7 +62,7 @@ const specCollection = defineCollection({
  * defaultCategory 是回退值（显式 category 优先），解析见 utils/series-utils.ts。
  */
 const seriesCollection = defineCollection({
-	loader: glob({ base: "./src/content/series", pattern: "**/*.md" }),
+	loader: glob({ base: localized("./src/content/series"), pattern: "**/*.md" }),
 	schema: z.object({
 		title: z.string(),
 		status: z.enum(["ongoing", "completed"]).optional().default("ongoing"),
@@ -71,7 +71,7 @@ const seriesCollection = defineCollection({
 });
 
 const momentsCollection = defineCollection({
-	loader: glob({ base: "./src/content/moments", pattern: "**/*.md" }),
+	loader: glob({ base: localized("./src/content/moments"), pattern: "**/*.md" }),
 	schema: z.object({
 		published: z.date(),
 		pinned: z.boolean().optional().default(false),
@@ -111,7 +111,7 @@ const thinkingCollection = defineCollection({
  * 文件名 daily-YYYY-MM-DD.md / weekly-YYYY-MM-DD.md，category 区分「前沿日报 / 前沿周报」。
  */
 const reportsCollection = defineCollection({
-	loader: glob({ base: "./src/content/reports", pattern: "**/*.md" }),
+	loader: glob({ base: localized("./src/content/reports"), pattern: "**/*.md" }),
 	schema: z.object({
 		title: z.string(),
 		published: z.date(),
