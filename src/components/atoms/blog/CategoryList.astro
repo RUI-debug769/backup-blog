@@ -4,6 +4,7 @@
  * 数据驱动：categories 为 { name, href, count? }[]。
  */
 import Button from "@components/atoms/action/Button.svelte";
+import { displayCategory } from "@utils/category-display";
 
 interface Props {
 	categories: { name: string; href: string; count?: number }[];
@@ -24,7 +25,7 @@ const { categories = [], class: className } = Astro.props;
 			class="!px-2 !text-[var(--on-surface)]"
 			
 		>
-			<span class="m3-blog-categorylist__name">{c.name}</span>
+			<span class="m3-blog-categorylist__name">{displayCategory(c.name)}</span>
 			{c.count !== undefined && (
 				<span class="m3-blog-categorylist__badge">{c.count}</span>
 			)}

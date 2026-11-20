@@ -53,7 +53,7 @@ const groups = [...tree.values()].sort((a, b) => a.name.localeCompare(b.name, "z
 						<li class="category-index__top">
 							<a class="category-index__row m3-state-layer" href={group.url}>
 								<MetaIcon icon="material-symbols:folder-outline-rounded" />
-								<span class="category-index__name">{group.name}</span>
+								<span class="category-index__name">{displayCategory(group.name)}</span>
 								<span class="category-index__rule" aria-hidden="true"></span>
 								<span class="category-index__count">{group.count}</span>
 							</a>
@@ -62,7 +62,7 @@ const groups = [...tree.values()].sort((a, b) => a.name.localeCompare(b.name, "z
 							<li>
 								<a class="category-index__row category-index__row--sub m3-state-layer" href={sub.url}>
 									<MetaIcon icon="material-symbols:subdirectory-arrow-right-rounded" />
-									<span class="category-index__name">{group.name} / {sub.name}</span>
+									<span class="category-index__name">{displayCategory(group.name)} / {displayCategory(sub.name)}</span>
 									<span class="category-index__rule" aria-hidden="true"></span>
 									<span class="category-index__count">{sub.count}</span>
 								</a>
