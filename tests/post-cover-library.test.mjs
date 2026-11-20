@@ -18,6 +18,7 @@ const expectedPosts = [
 	"2026-11-02-blog-as-graph",
 	"2026-11-06-diting",
 	"2026-11-07-diting-write",
+	"2026-11-20-prompt-evolution-recap",
 	"mdx-showcase",
 ];
 
