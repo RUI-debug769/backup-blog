@@ -13,6 +13,7 @@ import { siteConfig } from "@/config";
 import { navBarConfig } from "@/config/navBarConfig";
 import DisplaySettings from "./DisplaySettings.svelte";
 import LightDarkSwitch from "./LightDarkSwitch.svelte";
+import LanguageSwitch from "@components/atoms/navigation/LanguageSwitch.astro";
 import Search from "./Search.svelte";
 
 const className = Astro.props.class;
@@ -44,12 +45,12 @@ function isActive(link: (typeof links)[number]): boolean {
 		</IconButton>
 		<a
 			href={url("/")}
-			class="group flex h-10 items-center gap-2 px-2 text-[var(--on-surface)] transition whitespace-nowrap"
+			class="group flex h-10 min-w-0 max-w-[46vw] sm:max-w-none items-center gap-2 px-2 text-[var(--on-surface)] transition whitespace-nowrap"
 		>
 			<span class="h-5 w-1 rounded-full bg-[var(--primary)] transition-all group-hover:h-7"></span>
-			<span class="text-lg font-bold group-hover:text-[var(--primary)]">{siteConfig.title}</span>
+			<span class="text-lg font-bold truncate group-hover:text-[var(--primary)]">{siteConfig.title}</span>
 		</a>
-		<nav class:list={["top-app-bar__nav hidden h-full items-center gap-1 lg:flex", siteConfig.topAppBar.contentAlign === "center" ? "lg:absolute lg:left-1/2 lg:-translate-x-1/2" : "ml-4"]} aria-label="Main navigation">
+		<nav class:list={["top-app-bar__nav hidden h-full items-center gap-1 lg:flex", siteConfig.topAppBar.contentAlign === "center" ? "lg:min-w-0 lg:flex-1 lg:justify-center xl:absolute xl:left-1/2 xl:-translate-x-1/2 xl:flex-none" : "ml-4"]} aria-label="Main navigation">
 			{links.map((link) => {
 				const href = link.external ? link.url : hrefFor(link.url);
 				const active = isActive(link);
@@ -85,6 +86,7 @@ function isActive(link: (typeof links)[number]): boolean {
 			})}
 		</nav>
 		<div class="flex-1"></div>
+		<LanguageSwitch />
 		<Search client:only="svelte"></Search>
 		{!siteConfig.themeColor.fixed && (
 			<IconButton id="display-settings-switch" label="Display Settings" class="shrink-0">

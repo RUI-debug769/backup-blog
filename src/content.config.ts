@@ -2,8 +2,10 @@ import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 
+const localized = (dir: string) => (process.env.SITE_LANG === "en" ? dir + "-en" : dir);
+
 const postsCollection = defineCollection({
-	loader: glob({ base: "./src/content/posts", pattern: "**/*.{md,mdx}" }),
+	loader: glob({ base: localized("./src/content/posts"), pattern: "**/*.{md,mdx}" }),
 	schema: z.object({
 		title: z.string(),
 		published: z.date(),
@@ -51,7 +53,7 @@ const postsCollection = defineCollection({
 });
 
 const specCollection = defineCollection({
-	loader: glob({ base: "./src/content/spec", pattern: "**/*.{md,mdx}" }),
+	loader: glob({ base: localized("./src/content/spec"), pattern: "**/*.{md,mdx}" }),
 	schema: z.object({}),
 });
 

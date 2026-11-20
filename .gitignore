@@ -82,3 +82,4 @@ pw-local.config.ts
 # Python
 __pycache__/
 *.pyc
+dist-en/

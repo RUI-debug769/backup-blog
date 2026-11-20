@@ -1,0 +1,50 @@
+---
+/**
+ * 中英文切换：链接到同一页面在另一种语言下的镜像。
+ * 中文站（base "/"）→ /en<path>；英文站（base "/en/"）→ 去掉 /en 前缀。
+ * 静态链接（无 JS 依赖），与双构建镜像一一对应。
+ */
+import { siteConfig } from "@/config/siteConfig";
+
+const pathname = Astro.url.pathname;
+const isEn = siteConfig.base === "/en/";
+let href: string;
+if (isEn) {
+	href = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+} else {
+	href = `/en${pathname === "/" ? "/" : pathname}`;
+}
+const label = isEn ? "中文" : "EN";
+const title = isEn ? "切换到中文" : "Switch to English";
+---
+
+<a
+	href={href}
+	class="lang-switch m3-state-layer"
+	aria-label={title}
+	title={title}
+	data-no-swup
+>
+	<span class="lang-switch__text">{label}</span>
+</a>
+
+<style lang="stylus">
+.lang-switch
+	display: inline-flex
+	align-items: center
+	justify-content: center
+	flex-shrink: 0
+	min-width: 2.75rem
+	height: 2.75rem
+	padding: 0 0.6rem
+	border-radius: var(--shape-corner-full, 999px)
+	font-weight: 700
+	font-size: 0.85rem
+	letter-spacing: 0.02em
+	color: var(--on-surface-variant)
+	text-decoration: none
+	transition: background-color var(--m3e-duration-short, 0.15s), color var(--m3e-duration-short, 0.15s)
+	&:hover
+		color: var(--on-surface)
+		background: unquote("color-mix(in oklab, var(--on-surface) 8%, transparent)")
+</style>

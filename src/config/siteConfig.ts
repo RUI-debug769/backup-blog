@@ -11,7 +11,7 @@ import { withUserConfig } from "../utils/config-overlay.ts";
  */
 export const siteConfig: SiteConfig = withUserConfig("site", {
 	site: "https://murdok.me/",
-	base: "/",
+	base: process.env.SITE_LANG === "en" ? "/en/" : "/",
 	title: "MUR DOS LOG",
 	subtitle: "Murdo's blog",
 	// 电脑端顶栏标题与导航内容区域："left" 左对齐，"center" 居中。
@@ -27,7 +27,7 @@ export const siteConfig: SiteConfig = withUserConfig("site", {
 		reduceMotion: true, // 是否展示减少动效切换
 		texture: true, // 是否展示背景纹理选择
 	},
-	lang: "en", // Language code, e.g. 'en', 'zh_CN', 'ja', etc.
+	lang: process.env.SITE_LANG || "zh_CN", // Language code, e.g. 'en', 'zh_CN', 'ja', etc.
 	// IANA time zone for precise post and moment timestamps. It is independent of lang.
 	timeZone: "Asia/Shanghai",
 	themeColor: {
