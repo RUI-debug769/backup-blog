@@ -11,6 +11,7 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import Icon from "@iconify/svelte";
 import { getCategoryList } from "@utils/content-utils";
+import { displayCategory } from "@utils/category-display";
 import { pathsEqual, url } from "@utils/url-utils";
 
 interface Props {
@@ -74,7 +75,7 @@ const softCategory = !isHome && !isArchive && postCategory ? postCategory : "";
 						soft={cat.name === softCategory}
 						class="shrink-0"
 					>
-						{cat.name}
+						{displayCategory(cat.name)}
 						<span class="category-bar__count" aria-hidden="true">{cat.count}</span>
 					</Chip>
 				))}

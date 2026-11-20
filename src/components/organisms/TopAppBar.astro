@@ -234,7 +234,6 @@ document.addEventListener('swup:content:replace', bindSearchTriggers);
 function setupArcNav() {
 	const nav = document.querySelector("[data-arc-nav]");
 	if (!nav) return;
-	const PHI = 34 * Math.PI / 180;
 	let natural = 0;
 
 	function clearItems(items) {
@@ -259,6 +258,8 @@ function setupArcNav() {
 		nav.style.display = "";
 		items.forEach((el) => { el.style.flex = ""; });
 		const scale = Math.min(1, avail / Math.max(naturalW, 1));
+		const ratio = avail / Math.max(naturalW, 1);
+		const PHI = (ratio >= 1 ? 16 : Math.min(62, 16 + (1 - ratio) * 70)) * Math.PI / 180; // curvature follows width
 		const Rx = avail / (2 * Math.sin(PHI));
 		const Ry = 90; // flatten the arc vertically so it stays inside the top bar
 		const totalW = widths.reduce((a, b) => a + b, 0) || 1;

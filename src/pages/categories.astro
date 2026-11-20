@@ -12,6 +12,7 @@ import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getCategoryList } from "@utils/content-utils";
 import { getCategoryUrl } from "@utils/url-utils";
+import { displayCategory } from "@utils/category-display";
 
 const categories = await getCategoryList();
 const totalPosts = categories.reduce(

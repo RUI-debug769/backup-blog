@@ -8,6 +8,7 @@
 import MetaIcon from "@components/atoms/display/MetaIcon.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
+import { displayCategory } from "@utils/category-display";
 
 export interface BlogMetaLink {
 	name: string;
@@ -70,7 +71,7 @@ const {
 				class="m3-blog-postmeta__link"
 				href={category.href}
 				aria-label={`View all posts in the ${category.name} category`}
-			>{category.name}</a>
+			>{displayCategory(category.name)}</a>
 		) : (
 			<span class="m3-blog-postmeta__text">{uncategorizedLabel}</span>
 		)}
