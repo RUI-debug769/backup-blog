@@ -177,6 +177,83 @@ export const postCoverLibrary: PostCover[] = [
 		authorization:
 			"原页面未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
 	},
+	{
+		id: "virtual-singer-02",
+		file: "virtual-singer-02.webp",
+		alt: "初音未来主题插画：虚拟歌手与信息流",
+		themes: ["虚拟歌手", "初音未来", "信息"],
+		sourceSite: "Safebooru",
+		sourceUrl: "https://safebooru.org/index.php?page=post&s=view&id=803111",
+		author: "未知作者",
+		authorization:
+			"Safebooru 转载页未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
+	},
+	{
+		id: "clannad-02",
+		file: "clannad-02.webp",
+		alt: "CLANNAD 主题插画：日常与陪伴",
+		themes: ["CLANNAD", "日常", "陪伴"],
+		sourceSite: "Safebooru",
+		sourceUrl: "https://safebooru.org/index.php?page=post&s=view&id=463126",
+		author: "未知作者",
+		authorization:
+			"Safebooru 转载页未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
+	},
+	{
+		id: "hello-world-02",
+		file: "hello-world-02.webp",
+		alt: "HELLO WORLD 主题插画：数据与世界",
+		themes: ["HELLO WORLD", "数据", "世界"],
+		sourceSite: "Safebooru",
+		sourceUrl: "https://safebooru.org/index.php?page=post&s=view&id=33744",
+		author: "未知作者",
+		authorization:
+			"Safebooru 转载页未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
+	},
+	{
+		id: "computer-desk",
+		file: "computer-desk.webp",
+		alt: "日系插画：电脑与耳机组成的工作台",
+		themes: ["计算机", "耳机", "工作台"],
+		sourceSite: "Safebooru",
+		sourceUrl: "https://safebooru.org/index.php?page=post&s=view&id=200",
+		author: "未知作者",
+		authorization:
+			"Safebooru 转载页未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
+	},
+	{
+		id: "study-philosophy",
+		file: "study-philosophy.webp",
+		alt: "日系插画：读书与思考的安静时刻",
+		themes: ["哲学", "阅读", "思考"],
+		sourceSite: "Safebooru",
+		sourceUrl: "https://safebooru.org/index.php?page=post&s=view&id=1929432",
+		author: "未知作者",
+		authorization:
+			"Safebooru 转载页未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
+	},
+	{
+		id: "starlit-physics",
+		file: "starlit-physics.webp",
+		alt: "日系插画：望远镜与星空，物理与观测",
+		themes: ["物理", "星空", "观测"],
+		sourceSite: "Safebooru",
+		sourceUrl: "https://safebooru.org/index.php?page=post&s=view&id=874489",
+		author: "未知作者",
+		authorization:
+			"Safebooru 转载页未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
+	},
+	{
+		id: "math-notes",
+		file: "math-notes.webp",
+		alt: "日系插画：黑板与公式，数学与逻辑",
+		themes: ["数学", "逻辑", "黑板"],
+		sourceSite: "Safebooru",
+		sourceUrl: "https://safebooru.org/index.php?page=post&s=view&id=3468689",
+		author: "未知作者",
+		authorization:
+			"Safebooru 转载页未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
+	},
 ];
 
 export const postCoverAssignments: PostCoverAssignments = {
