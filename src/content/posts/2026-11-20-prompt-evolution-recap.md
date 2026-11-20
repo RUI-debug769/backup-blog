@@ -56,7 +56,7 @@ draft: false
 
 | v1：赛璐璐商业立绘（跑偏） | 参考图：黑白漫画网点（基准） |
 |------|------|
-| ![v1 风格跑偏](/images/prompt-evolution/v1.jpg) | ![参考图](/images/prompt-evolution/ref.jpg) |
+| ![v1 风格跑偏](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/prompt-evolution/v1.jpg) | ![参考图](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/prompt-evolution/ref.jpg) |
 
 ### 3.2 v3 → v4：网点是分区资源；手部用正面表述
 
@@ -101,7 +101,7 @@ HANDS = "袖口略长盖住手腕，可见手指只用两三笔概括；拿东�
 
 | v7：腿椅粘连、网点当灰度 | v8：白缝分离、纯黑阴影（定稿） |
 |------|------|
-| ![v7 腿椅融合](/images/prompt-evolution/v7.jpg) | ![v8 定稿](/images/prompt-evolution/v8.jpg) |
+| ![v7 腿椅融合](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/prompt-evolution/v7.jpg) | ![v8 定稿](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/prompt-evolution/v8.jpg) |
 
 ### 3.5 v8+：单点修复——给手一个接触锚点
 
@@ -116,7 +116,7 @@ HANDS = "袖口略长盖住手腕，可见手指只用两三笔概括；拿东�
 
 | 修复前：双手悬空离开扶手 | 修复后：双手撑住扶手 |
 |------|------|
-| ![05 修复前](/images/prompt-evolution/rej05.jpg) | ![05 修复后](/images/prompt-evolution/fix05.jpg) |
+| ![05 修复前](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/prompt-evolution/rej05.jpg) | ![05 修复后](https://gcore.jsdelivr.net/gh/RUI-debug769/image-host@main/images/prompt-evolution/fix05.jpg) |
 
 ## 四、指令 Loop：让改进收敛的七条纪律
 
