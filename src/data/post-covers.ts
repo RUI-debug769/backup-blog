@@ -257,7 +257,7 @@ export const postCoverLibrary: PostCover[] = [
 ];
 
 export const postCoverAssignments: PostCoverAssignments = {
-	"2026-10-17-hello": "self-reference",
+	"2026-10-17-hello": "hello-world-02",
 	"2026-10-18-animaeva-memory-eval": "ai-memory",
 	"2026-10-18-careeratlas": "career-path",
 	"2026-10-18-frontier-report": "information-stream",
@@ -267,4 +267,6 @@ export const postCoverAssignments: PostCoverAssignments = {
 	"2026-10-25-shardseek": "circuit-light",
 	"2026-11-02-blog-as-graph": "knowledge-graph",
 	"2026-11-06-diting": "private-listening",
+	"2026-11-07-diting-write": "virtual-singer-02",
+	"2026-11-20-prompt-evolution-recap": "computer-desk",
 };
