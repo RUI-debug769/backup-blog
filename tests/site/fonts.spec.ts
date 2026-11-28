@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const CODE_POST_PATH = "/posts/expressive-code/";
+const CODE_POST_PATH = "/posts/2026-10-18-animaeva-memory-eval/";
 
 test("code blocks resolve the configured mono font family", async ({
 	page,

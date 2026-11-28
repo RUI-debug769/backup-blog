@@ -5,12 +5,16 @@ import {
 	comparePublicationEntries,
 	validatePublicationMetadata,
 } from "@utils/content-date";
+import { assertNoPendingCoverBatches } from "@utils/cover-expansion";
 import { siteMarkdownProcessor } from "@utils/markdown-processor";
 import { initPostIdMap } from "@utils/permalink-utils";
-import { assertPostCoverAssets } from "@utils/post-cover-assets";
 import {
+	assertPostCoverAssets,
+	readPendingCoverBatches,
+} from "@utils/post-cover-assets";
+import {
+	assertCompleteCoverAssignments,
 	resolvePostCover,
-	validatePostCoverAssignments,
 } from "@utils/post-covers";
 import {
 	findUnknownSeriesSlugs,
@@ -40,17 +44,23 @@ const warnedUnknownSeries = new Set<string>();
 
 // // Retrieve posts and sort them by publication date
 async function getRawSortedPosts(): Promise<CollectionEntry<"posts">[]> {
-	const allBlogPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	const allBlogPosts = await getCollection("posts");
 
 	for (const post of allBlogPosts) validatePublicationMetadata(post);
 	const sorted = allBlogPosts.sort(comparePublicationEntries);
 
 	const postIds = sorted.map((post) => post.id);
-	validatePostCoverAssignments(postIds, postCoverLibrary, postCoverAssignments);
+	assertCompleteCoverAssignments(
+		postIds,
+		postCoverLibrary,
+		postCoverAssignments,
+	);
+	assertNoPendingCoverBatches(readPendingCoverBatches());
 	assertPostCoverAssets(postCoverLibrary);
-	for (const post of sorted) {
+	const posts = import.meta.env.PROD
+		? sorted.filter((post) => post.data.draft !== true)
+		: sorted;
+	for (const post of posts) {
 		post.data.image = resolvePostCover(
 			post.id,
 			post.data.image,
@@ -63,7 +73,7 @@ async function getRawSortedPosts(): Promise<CollectionEntry<"posts">[]> {
 	// 这里对集合条目 data 的写入是有意为之且幂等的（写入的即解析结果本身，
 	// 二次解析不变），因此 permalink 的 %category%、PostMeta 与聚合计数保持一致。
 	const seriesCatalog = await getSeriesCatalog();
-	for (const post of sorted) {
+	for (const post of posts) {
 		const seriesSlug = normaliseSeriesSlug(post.data.series);
 		const seriesData = seriesSlug
 			? seriesCatalog.get(seriesSlug)?.data
@@ -76,7 +86,7 @@ async function getRawSortedPosts(): Promise<CollectionEntry<"posts">[]> {
 
 	// 引用未知系列的笔误：宽容忽略，但给出一次性构建期警告（dev/build 日志可见）
 	for (const ref of findUnknownSeriesSlugs(
-		sorted.map((post) => ({ slug: post.id, series: post.data.series })),
+		posts.map((post) => ({ slug: post.id, series: post.data.series })),
 		seriesCatalog,
 	)) {
 		if (!warnedUnknownSeries.has(ref.slug)) {
@@ -87,8 +97,8 @@ async function getRawSortedPosts(): Promise<CollectionEntry<"posts">[]> {
 		}
 	}
 
-	initPostIdMap(sorted);
-	return sorted;
+	initPostIdMap(posts);
+	return posts;
 }
 
 export async function getSortedPosts(): Promise<CollectionEntry<"posts">[]> {
