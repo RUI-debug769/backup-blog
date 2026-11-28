@@ -178,17 +178,6 @@ export const postCoverLibrary: PostCover[] = [
 			"原页面未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
 	},
 	{
-		id: "virtual-singer-02",
-		file: "virtual-singer-02.webp",
-		alt: "初音未来主题插画：虚拟歌手与信息流",
-		themes: ["虚拟歌手", "初音未来", "信息"],
-		sourceSite: "Safebooru",
-		sourceUrl: "https://safebooru.org/index.php?page=post&s=view&id=803111",
-		author: "未知作者",
-		authorization:
-			"Safebooru 转载页未见明确再发布许可；仅记录来源，不宣称已获授权，部署前需复核使用范围。",
-	},
-	{
 		id: "clannad-02",
 		file: "clannad-02.webp",
 		alt: "CLANNAD 主题插画：日常与陪伴",
@@ -267,6 +256,7 @@ export const postCoverAssignments: PostCoverAssignments = {
 	"2026-10-25-shardseek": "circuit-light",
 	"2026-11-02-blog-as-graph": "knowledge-graph",
 	"2026-11-06-diting": "private-listening",
-	"2026-11-07-diting-write": "virtual-singer-02",
 	"2026-11-20-prompt-evolution-recap": "computer-desk",
+	"2026-11-07-diting-write": "neuro-sama",
+	"mdx-showcase": "hello-world",
 };

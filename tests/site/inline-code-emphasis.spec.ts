@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const POST_PATH = "/posts/expressive-code/";
+const POST_PATH = "/posts/2026-10-18-animaeva-memory-eval/";
 
 /**
  * Inline code must keep the emphasis the author wrote.
@@ -29,7 +29,7 @@ for (const navigation of ["direct", "swup"] as const) {
 			await page.evaluate((path) => {
 				window.swup?.navigate(path);
 			}, POST_PATH);
-			await expect(page).toHaveURL(/\/posts\/expressive-code\//);
+			await expect(page).toHaveURL(new RegExp(POST_PATH));
 		}
 
 		await page.waitForFunction(() =>

@@ -17,20 +17,36 @@ const expectedPosts = [
 	"2026-10-25-shardseek",
 	"2026-11-02-blog-as-graph",
 	"2026-11-06-diting",
+	"2026-11-07-diting-write",
+	"2026-11-20-prompt-evolution-recap",
+	"mdx-showcase",
 ];
 
-test("curated library contains 16 traceable unique covers", () => {
-	assert.equal(postCoverLibrary.length, 16);
-	assert.equal(new Set(postCoverLibrary.map((cover) => cover.id)).size, 16);
+test("curated library contains at least 16 traceable unique covers", () => {
+	assert.ok(postCoverLibrary.length >= 16);
+	assert.equal(
+		new Set(postCoverLibrary.map((cover) => cover.id)).size,
+		postCoverLibrary.length,
+	);
 	validatePostCoverLibrary(postCoverLibrary);
 	for (const cover of postCoverLibrary)
 		assert.equal(cover.file, `${cover.id}.webp`);
 });
 
-test("all ten current posts have distinct explicit assignments", () => {
+test("current posts and the draft fixture have distinct explicit assignments", () => {
 	for (const postId of expectedPosts)
 		assert.ok(postCoverAssignments[postId], postId);
-	assert.equal(new Set(Object.values(postCoverAssignments)).size, 10);
+	assert.equal(postCoverAssignments["2026-10-17-hello"], "hello-world-02");
+	assert.equal(postCoverAssignments["2026-11-07-diting-write"], "neuro-sama");
+	assert.equal(
+		postCoverAssignments["2026-11-20-prompt-evolution-recap"],
+		"computer-desk",
+	);
+	assert.equal(postCoverAssignments["mdx-showcase"], "hello-world");
+	assert.equal(
+		new Set(Object.values(postCoverAssignments)).size,
+		expectedPosts.length,
+	);
 	for (const coverId of Object.values(postCoverAssignments)) {
 		assert.ok(
 			postCoverLibrary.some((cover) => cover.id === coverId),
